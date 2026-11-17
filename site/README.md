@@ -17,7 +17,8 @@ python -m http.server -d site 8000   # http://localhost:8000
 ```
 
 Monthly routine: archive the files listed on the calendar (`nda archive ... --publication
-YYYY-MM-DD`), `nda ingest-rtt`, `nda reconcile-rtt`, `nda build-site`, commit, merge to main.
+YYYY-MM-DD`), `nda ingest-rtt --vintage auto`, `nda reconcile-rtt`, `nda archive-push`,
+`nda build-site`, commit and push to main.
 
 Scaling note: `timeseries/provider.json` is ~0.6 MB for two months. Before loading many
 years, split it per organisation so pages fetch only what they show.

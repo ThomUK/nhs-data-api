@@ -16,3 +16,4 @@ New ADRs copy `template.md` and take the next number. Superseded ADRs stay, mark
 | 0009 | [Source acquisition and polite fetching](0009-source-acquisition.md) | Accepted |
 | 0010 | [UK hosting, portable deployment](0010-uk-hosting.md)         | Proposed |
 | 0011 | [Agent interface: OpenAPI, MCP, llms.txt](0011-agent-interface.md) | Accepted |
+| 0012 | [Durable raw archive in a private git repository](0012-durable-raw-archive.md) | Accepted |

@@ -27,6 +27,9 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("build-rtt-metrics", help="recompute RTT measures for all views")
     sub.add_parser("rebuild-rtt", help="regenerate processed RTT data from the raw archive")
     sub.add_parser("fetch-ods", help="snapshot ODS records for every organisation in the data")
+    ap = sub.add_parser("archive-push", help="update the manifest and push the raw archive")
+    ap.add_argument("-m", "--message", default="Archive update")
+    sub.add_parser("archive-verify", help="check archived files against the manifest")
     arc = sub.add_parser("archive", help="copy a manually downloaded file into the raw archive")
     arc.add_argument("files", nargs="+")
     arc.add_argument("--dataset", required=True)
@@ -62,6 +65,15 @@ def main(argv: list[str] | None = None) -> None:
         out = rtt.write_vintage(df, PROCESSED_DIR / "rtt", args.vintage)
         print(f"wrote {df.height:,} rows to {out}")
         print("metrics: " + ", ".join(str(p) for p in build_rtt_metrics(PROCESSED_DIR)))
+    elif args.cmd == "archive-push":
+        from . import archive
+        print(archive.push(RAW_DIR, args.message))
+    elif args.cmd == "archive-verify":
+        from . import archive
+        v = archive.verify(RAW_DIR)
+        print(f"checked {v.checked}; missing {v.missing}; changed {v.changed}; "
+              f"not yet in manifest {v.unlisted}")
+        sys.exit(0 if not (v.missing or v.changed) else 1)
     elif args.cmd == "fetch-ods":
         import polars as pl
 

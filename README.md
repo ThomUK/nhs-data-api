@@ -48,6 +48,21 @@ uv run nda reconcile-rtt Incomplete-Provider.xlsx --period 2026-09-01
 uv run uvicorn nhs_data_api.api.app:app --reload   # then open /docs
 ```
 
+## Data storage and restore
+
+Source files are kept in a private archive repository
+([ADR 0012](docs/adr/0012-durable-raw-archive.md)); everything else is rebuilt from it.
+
+```bash
+git clone https://github.com/ThomUK/nhs-data-archive ../nhs-data-archive
+export NDA_RAW_DIR=../nhs-data-archive NDA_DATA_DIR=/path/to/scratch/data
+uv run nda archive-verify          # every file matches MANIFEST.csv
+uv run nda rebuild-rtt             # processed layer + metrics (~3 minutes)
+uv run nda build-site
+```
+
+After adding files each month: `uv run nda archive-push -m "RTT October 2026"`.
+
 ## Admin site
 
 A static admin site in [`site/`](site/README.md) (GitHub Pages): publication calendar with the
