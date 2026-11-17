@@ -1,0 +1,8 @@
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+# Local data lake: raw archive and processed Parquet never go in git.
+data/
+!data/.gitkeep

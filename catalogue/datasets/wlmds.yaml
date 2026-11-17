@@ -1,0 +1,26 @@
+id: wlmds
+title: Waiting List Minimum Data Set (WLMDS)
+status: draft
+summary: >
+  Weekly patient-level collection of elective waiting lists, published as aggregate
+  statistics alongside the monthly RTT data. Gives a more timely view of the waiting list.
+publisher: NHS England
+source_page: https://www.england.nhs.uk/statistics/statistical-work-areas/rtt-waiting-times/wlmds/
+licence:
+  name: Open Government Licence v3.0
+  url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+attribution: "Source: NHS England, Waiting List Minimum Data Set. Contains public sector information licensed under the Open Government Licence v3.0."
+frequency: weekly
+geography: England
+coverage_start: null  # to confirm from the publication archive
+grain: []  # to define after inspecting published files
+
+dimensions: []
+measures: []
+
+caveats:
+  - id: wlmds-not-rtt
+    applies_to: all
+    text: >
+      WLMDS is a different collection from monthly RTT and its figures will not match RTT
+      exactly (coverage, timing and definitions differ). Do not mix the two in one series.

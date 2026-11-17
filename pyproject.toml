@@ -1,0 +1,40 @@
+[project]
+name = "nhs-data-api"
+version = "0.1.0"
+description = "Agent-ready API over public NHS England statistics (working title)."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115",
+    "httpx>=0.27",
+    "polars>=1.10",
+    "pydantic>=2.9",
+    "pyyaml>=6.0",
+    "uvicorn>=0.32",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.3", "ruff>=0.7"]
+
+[project.scripts]
+nda = "nhs_data_api.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nhs_data_api"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = ["fastapi.Query", "fastapi.Depends"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,113 @@
+id: rtt
+title: Consultant-led Referral to Treatment (RTT) Waiting Times
+status: draft
+summary: >
+  Monthly counts of patients on consultant-led elective care pathways in England, by provider,
+  commissioner and treatment function, split into weekly waiting-time bands. Covers the open
+  waiting list (incomplete pathways), completed pathways and new clock starts.
+publisher: NHS England
+source_page: https://www.england.nhs.uk/statistics/statistical-work-areas/rtt-waiting-times/
+licence:
+  name: Open Government Licence v3.0
+  url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+attribution: "Source: NHS England, Consultant-led Referral to Treatment Waiting Times. Contains public sector information licensed under the Open Government Licence v3.0."
+frequency: monthly
+geography: England
+coverage_start: 2007-03-01
+grain: [period, provider_org_code, commissioner_org_code, rtt_part_type, treatment_function_code, weeks_band]
+
+dimensions:
+  - id: period
+    label: Reporting month
+    description: Calendar month the snapshot or activity relates to, as the first day of the month (ISO date).
+  - id: provider_org_code
+    label: Provider organisation
+    description: ODS code of the organisation providing treatment (usually an NHS trust or independent sector provider).
+  - id: provider_parent_org_code
+    label: Provider parent organisation
+    description: ODS code of the provider's parent (region/ICB hierarchy as published).
+  - id: commissioner_org_code
+    label: Commissioner organisation
+    description: ODS code of the commissioner (ICB sub-location, formerly CCG).
+  - id: commissioner_parent_org_code
+    label: Commissioner parent organisation
+    description: ODS code of the commissioner's parent (ICB).
+  - id: rtt_part_type
+    label: Pathway type
+    description: Which RTT return the row comes from.
+    codes:
+      Part_1A: Completed admitted pathways (clock stopped on admission for treatment)
+      Part_1B: Completed non-admitted pathways (clock stopped without admission)
+      Part_2: Incomplete pathways (patients still waiting at month end; the waiting list)
+      Part_2A: Incomplete pathways with a decision to admit
+      Part_3: New RTT periods (clock starts in the month)
+  - id: treatment_function_code
+    label: Treatment function
+    description: Specialty grouping. Published as a subset of treatment function codes plus "Other" groupings and a total. The set changed in 2021 (expanded list); see caveats.
+  - id: weeks_band
+    label: Waiting-time band
+    description: >
+      Weeks waited, as a half-open interval (weeks_lower, weeks_upper]. The final band is
+      open-ended (more than 104 weeks in current files). A separate band counts patients
+      with an unknown clock start date.
+
+measures:
+  - id: patients
+    label: Patients
+    unit: count
+    aggregation: sum
+    definition: Number of patient pathways in the band for the given dimensions.
+  - id: incomplete_pathways_total
+    label: Total waiting list (incomplete pathways)
+    unit: count
+    aggregation: sum
+    definition: Sum of patients across all known-clock-start bands for rtt_part_type Part_2.
+    caveat: Excludes pathways with an unknown clock start date, which are reported separately.
+  - id: pct_within_18_weeks
+    label: Percentage of incomplete pathways waiting 18 weeks or less
+    unit: percent
+    aggregation: ratio (recompute from components; never average)
+    definition: >
+      Part_2 patients in bands with weeks_upper <= 18, divided by incomplete_pathways_total.
+    standard: NHS Constitution operational standard of 92%.
+    status: draft
+    caveat: Method to be verified against NHS England headline figures before release.
+  - id: median_wait_weeks
+    label: Median wait (weeks)
+    unit: weeks
+    aggregation: not additive (recompute from band counts)
+    definition: >
+      Median of the waiting-time distribution, estimated by linear interpolation within the
+      weekly band containing the 50th percentile.
+    status: draft
+    caveat: Method to be verified against NHS England published medians.
+  - id: waiting_over_52_weeks
+    label: Patients waiting more than 52 weeks
+    unit: count
+    aggregation: sum
+    definition: Part_2 patients in bands with weeks_lower >= 52.
+
+caveats:
+  - id: rtt-independent-sector
+    applies_to: all
+    text: >
+      Independent sector providers appear as providers in their own right. Totals by NHS
+      trust exclude NHS-funded activity delivered by independent providers unless they are
+      included explicitly.
+  - id: rtt-revisions
+    applies_to: all
+    text: >
+      Figures can be revised in later publications. This API keeps every vintage; the
+      default view returns the latest revised figure. Use the as_published view for the
+      figure as first released.
+  - id: rtt-non-submission
+    applies_to: all
+    text: >
+      Some organisations do not submit for some months (for example after an electronic
+      patient record go-live). Missing data are not zeros; national totals in the source may
+      include estimates for non-submitters. Organisation-month caveats are listed here as
+      they are identified.
+
+known_format_changes:
+  - date: 2021-04-01
+    note: Treatment function list expanded; earlier "Other" groupings not directly comparable. (To verify.)

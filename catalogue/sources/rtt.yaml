@@ -1,0 +1,9 @@
+# Manifest of RTT publication files to ingest (ADR 0009).
+# Add entries on release day from the NHS England RTT pages, viewed in a normal browser.
+# The "Full CSV data file" zip for each month is the primary input.
+dataset: rtt
+files: []
+#  - period: 2026-09-01
+#    published: 2026-11-13
+#    kind: full_csv_zip
+#    url: https://www.england.nhs.uk/statistics/wp-content/uploads/sites/2/...
