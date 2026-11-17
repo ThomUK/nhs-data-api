@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from datetime import date
 from pathlib import Path
@@ -23,6 +24,13 @@ def main(argv: list[str] | None = None) -> None:
     ing.add_argument("--source-url", help="where a local file was downloaded from (provenance)")
     sub.add_parser("catalogue-check", help="validate catalogue YAML")
     sub.add_parser("build-rtt-metrics", help="recompute RTT measures for all views")
+    arc = sub.add_parser("archive", help="copy a manually downloaded file into the raw archive")
+    arc.add_argument("files", nargs="+")
+    arc.add_argument("--dataset", required=True)
+    arc.add_argument("--publication", required=True, help="publication date, YYYY-MM-DD")
+    arc.add_argument("--source-url")
+    site = sub.add_parser("build-site", help="export JSON for the admin site")
+    site.add_argument("--out", default=None, help="output directory (default site/data)")
     rec = sub.add_parser("reconcile-rtt",
                          help="compare our measures with NHS England's Incomplete Provider xlsx")
     rec.add_argument("workbook", help="path to the Incomplete Provider workbook")
@@ -47,6 +55,14 @@ def main(argv: list[str] | None = None) -> None:
         print("metrics: " + ", ".join(str(p) for p in build_rtt_metrics(PROCESSED_DIR)))
     elif args.cmd == "build-rtt-metrics":
         print("metrics: " + ", ".join(str(p) for p in build_rtt_metrics(PROCESSED_DIR)))
+    elif args.cmd == "archive":
+        for f in args.files:
+            a = archive_local(Path(f), args.dataset, args.publication, args.source_url)
+            print(("already archived: " if a.already_present else "archived: ") + str(a.path))
+    elif args.cmd == "build-site":
+        from .site import build_site
+        for path in build_site(Path(args.out) if args.out else None):
+            print(f"wrote {path}")
     elif args.cmd == "reconcile-rtt":
         import polars as pl
 
@@ -56,6 +72,10 @@ def main(argv: list[str] | None = None) -> None:
         ).collect()
         result = reconcile(read_provider_workbook(Path(args.workbook)), ours)
         print(result.summary())
+        out = PROCESSED_DIR / "validation" / "rtt" / f"{args.period}.json"
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(json.dumps(result.to_json(args.period, Path(args.workbook).name), indent=2))
+        print(f"recorded: {out}")
         for name, frame in result.mismatches.items():
             if not frame.is_empty():
                 print(f"\n{name}:\n{frame.head(10)}")

@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Publication Calendar</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <main>
+    <h1>Publication calendar</h1>
+    <p class="lede">Expected publication dates for each dataset, and the files to collect on each date.
+      Received status is read from the raw archive when the site data is built.</p>
+    <div class="filters" role="group" aria-label="Calendar filters">
+      <label>Dataset
+        <select id="f-dataset"><option value="">All datasets</option></select>
+      </label>
+      <label>Look ahead
+        <select id="f-ahead"><option value="3">3 months</option><option value="6" selected>6 months</option><option value="12">12 months</option></select>
+      </label>
+      <label class="check"><input type="checkbox" id="f-past" checked> Show past 3 months</label>
+      <label class="check"><input type="checkbox" id="f-pending"> Include datasets not yet onboarded</label>
+      <button type="button" id="ics">Download upcoming dates (.ics)</button>
+    </div>
+    <div id="content"><p class="muted">Loading…</p></div>
+  </main>
+  <script type="module" src="assets/calendar.js"></script>
+</body>
+</html>

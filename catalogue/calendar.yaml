@@ -1,0 +1,82 @@
+# Publication schedule and the files needed from each publication.
+#
+# Dates are generated from each dataset's rule; `confirmed` lists dates checked against a
+# primary source (press notice or official release calendar), and `overrides` moves a
+# generated date when the publisher deviates from the rule. Anything not confirmed is shown
+# as "expected" on the admin site.
+#
+# File patterns: {mon} = data month abbreviation (Sep), {yy} = two-digit year (26),
+# {month} = full month name (September), {yyyy} = four-digit year. A file counts as received
+# when a file in raw/<dataset>/<publication date>/ matches its pattern (case-insensitive).
+
+datasets:
+  rtt:
+    title: Referral to Treatment (RTT) waiting times
+    rule: second_thursday
+    data_lag_months: 2
+    rule_status: confirmed
+    rule_note: >
+      NHS England monthly performance statistics are published on the second Thursday of the
+      month, covering the month two months earlier.
+    confirmed:
+      2026-11-12: Confirmed by the September 2026 Statistical Press Notice
+    overrides: {}
+    source_page: https://www.england.nhs.uk/statistics/statistical-work-areas/rtt-waiting-times/
+    files:
+      - id: full_csv
+        label: Full CSV data file
+        pattern: "Full-CSV-data-file-{mon}{yy}"
+        role: ingest
+        required: true
+        purpose: Primary input. Every measure is computed from this file.
+      - id: incomplete_provider
+        label: Incomplete Provider workbook
+        pattern: "Incomplete-Provider-{mon}{yy}"
+        role: validate
+        required: true
+        purpose: Provider-level reconciliation (nda reconcile-rtt) before publishing.
+      - id: overview_timeseries
+        label: RTT Overview Timeseries including estimates for missing trusts
+        pattern: "RTT-Overview-Timeseries.*{mon}{yy}"
+        role: validate
+        required: false
+        purpose: National figures, NHS England's estimates for missing trusts, revisions.
+      - id: spn
+        label: Statistical Press Notice (PDF)
+        pattern: "{mon}{yy}-RTT-SPN"
+        role: reference
+        required: false
+        purpose: Names providers that did not submit; confirms the publication date.
+
+  diagnostics:
+    title: Diagnostic waiting times and activity (DM01)
+    rule: second_thursday
+    data_lag_months: 2
+    rule_status: unconfirmed
+    rule_note: Expected alongside RTT in the monthly performance statistics. Not yet ingested.
+    confirmed: {}
+    overrides: {}
+    source_page: https://www.england.nhs.uk/statistics/statistical-work-areas/diagnostics-waiting-times-and-activity/
+    files: []
+
+  wlmds:
+    title: Waiting List Minimum Data Set (WLMDS)
+    rule: second_thursday
+    data_lag_months: 2
+    rule_status: unconfirmed
+    rule_note: Published alongside the monthly RTT statistics; cadence and lag to confirm.
+    confirmed: {}
+    overrides: {}
+    source_page: https://www.england.nhs.uk/statistics/statistical-work-areas/rtt-waiting-times/wlmds/
+    files: []
+
+  workforce:
+    title: NHS workforce statistics
+    rule: unknown
+    data_lag_months: null
+    rule_status: unconfirmed
+    rule_note: Monthly. Publication day and lag to be confirmed from the release calendar.
+    confirmed: {}
+    overrides: {}
+    source_page: https://digital.nhs.uk/data-and-information/publications/statistical/nhs-workforce-statistics
+    files: []

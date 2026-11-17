@@ -75,6 +75,28 @@ class Reconciliation:
         return (self.missing_from_ours.is_empty() and self.missing_from_published.is_empty()
                 and all(m.is_empty() for m in self.mismatches.values()))
 
+    def to_json(self, period: str, workbook: str, sample: int = 25) -> dict:
+        """Serialisable record of this run, for the admin site."""
+        from datetime import UTC, datetime
+        return {
+            "dataset": "rtt",
+            "check": "incomplete_provider_workbook",
+            "period": period,
+            "workbook": workbook,
+            "run_at": datetime.now(UTC).isoformat(timespec="seconds"),
+            "ok": self.ok,
+            "rows_published": self.rows_published,
+            "rows_compared": self.rows_compared,
+            "missing_from_ours": self.missing_from_ours.height,
+            "missing_from_published": self.missing_from_published.height,
+            "checks": [
+                {"measure": k, "mismatches": v.height,
+                 "tolerance": PERCENTILE_TOLERANCE if k in PERCENTILES else 0,
+                 "sample": v.head(sample).to_dicts()}
+                for k, v in self.mismatches.items()
+            ],
+        }
+
     def summary(self) -> str:
         lines = [f"published rows (non-zero list): {self.rows_published}",
                  f"compared: {self.rows_compared}",

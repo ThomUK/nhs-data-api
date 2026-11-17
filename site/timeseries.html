@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RTT Time Series</title>
+  <meta name="robots" content="noindex">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+  <main>
+    <h1>RTT time series</h1>
+    <p class="lede">Eyeball each measure over time to spot anomalies. Points flagged
+      <span class="status warning"><span class="dot" aria-hidden="true">⚠</span>for review</span>
+      meet one of the rules below; flags are prompts to look, not errors.</p>
+    <div class="filters" role="group" aria-label="Series filters">
+      <label>Mode
+        <span class="segmented" id="f-mode">
+          <button type="button" data-mode="org" aria-pressed="true">Organisation</button>
+          <button type="button" data-mode="scan" aria-pressed="false">Anomaly scan</button>
+        </span>
+      </label>
+      <label>View <select id="f-view"></select></label>
+      <label id="l-org">Organisation
+        <input type="search" id="f-org" list="org-list" placeholder="Name or ODS code" autocomplete="off">
+        <datalist id="org-list"></datalist>
+      </label>
+      <label id="l-tf">Specialty <select id="f-tf"></select></label>
+      <label id="l-measure" hidden>Measure <select id="f-measure"></select></label>
+      <label>Jump threshold (counts) <input type="number" id="f-rel" min="1" max="200" value="20" aria-describedby="rules"> </label>
+      <label>Jump threshold (% / weeks) <input type="number" id="f-abs" min="0.1" max="50" step="0.1" value="3" aria-describedby="rules"></label>
+      <label class="check"><input type="checkbox" id="f-exp"> Experimental measures</label>
+      <label class="check" id="l-flagged" hidden><input type="checkbox" id="f-flagged"> Flagged only</label>
+    </div>
+    <div id="notices"></div>
+    <div id="content"><p class="muted">Loading…</p></div>
+    <h2>Flag rules</h2>
+    <ul class="small" id="rules" style="color:var(--ink-2);max-width:75ch">
+      <li><strong>Missing month:</strong> no value, although earlier and later months have values (often a missed submission).</li>
+      <li><strong>No data this month:</strong> the latest month has no value but earlier months do (a missed submission, merger, recoding or closure).</li>
+      <li><strong>Jump:</strong> change on the previous month of at least the threshold, as a percentage for counts
+        (ignored below 20) or in points/weeks for percentages and waits.</li>
+      <li><strong>Outlier:</strong> with at least 6 earlier months, more than 3.5 robust standard deviations
+        (scaled median absolute deviation) from the median of the previous 12 months.</li>
+    </ul>
+  </main>
+  <script type="module" src="assets/timeseries.js"></script>
+</body>
+</html>

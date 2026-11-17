@@ -22,6 +22,7 @@ All decisions are in [`docs/adr/`](docs/adr/README.md).
 ```
 catalogue/          public semantic catalogue: datasets, measures, caveats, source manifests
 docs/adr/           architecture decision records
+site/               static admin site (GitHub Pages); data exported by `nda build-site`
 src/nhs_data_api/
   catalogue.py      catalogue models and loader
   ingest/fetch.py   polite downloader into the immutable raw archive
@@ -46,6 +47,12 @@ uv run nda build-rtt-metrics                         # also runs after each inge
 uv run nda reconcile-rtt Incomplete-Provider.xlsx --period 2026-09-01
 uv run uvicorn nhs_data_api.api.app:app --reload   # then open /docs
 ```
+
+## Admin site
+
+A static admin site in [`site/`](site/README.md) (GitHub Pages): publication calendar with the
+files to collect on each date, RTT time series with anomaly flags, and validation results.
+Rebuild its data with `uv run nda build-site`.
 
 ## API (first slice)
 
