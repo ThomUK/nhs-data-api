@@ -250,8 +250,11 @@ measures:
     definition: >
       Change in waiting_list_total counting only providers that submitted in both months.
     caveat: >
-      Providers recoded under a new ODS code are treated as different providers until ODS
-      successor mapping is applied.
+      Providers recoded under a new ODS code, or merged into another provider, are treated as
+      different providers until ODS successor mapping is applied. A merger inflates this
+      measure: in July 2026 North Bristol (RVJ, about 42,000 waiting) stopped reporting and
+      University Hospitals Bristol and Weston (RA7) grew from 50,605 to 94,932, so the July
+      like-for-like change is overstated by roughly that amount.
   - id: waiting_over_52_weeks_change_mom_like_for_like
     label: Change in 52+ week waiters since previous month, like-for-like providers
     unit: count
