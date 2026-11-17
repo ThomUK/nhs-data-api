@@ -9,6 +9,7 @@ from .catalogue import load_catalogue
 from .ingest import rtt
 from .ingest.fetch import archive_local, archive_url
 from .paths import PROCESSED_DIR
+from .store import build_rtt_metrics
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -19,6 +20,7 @@ def main(argv: list[str] | None = None) -> None:
     ing.add_argument("--vintage", required=True, help="publication date, YYYY-MM-DD")
     ing.add_argument("--source-url", help="where a local file was downloaded from (provenance)")
     sub.add_parser("catalogue-check", help="validate catalogue YAML")
+    sub.add_parser("build-rtt-metrics", help="recompute RTT measures for all views")
     args = p.parse_args(argv)
 
     if args.cmd == "catalogue-check":
@@ -36,6 +38,9 @@ def main(argv: list[str] | None = None) -> None:
         df = rtt.tidy(rtt.read_full_csv(Path(src)))
         out = rtt.write_vintage(df, PROCESSED_DIR / "rtt", args.vintage)
         print(f"wrote {df.height:,} rows to {out}")
+        print("metrics: " + ", ".join(str(p) for p in build_rtt_metrics(PROCESSED_DIR)))
+    elif args.cmd == "build-rtt-metrics":
+        print("metrics: " + ", ".join(str(p) for p in build_rtt_metrics(PROCESSED_DIR)))
 
 
 if __name__ == "__main__":

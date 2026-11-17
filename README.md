@@ -25,7 +25,8 @@ src/nhs_data_api/
   catalogue.py      catalogue models and loader
   ingest/fetch.py   polite downloader into the immutable raw archive
   ingest/rtt.py     RTT Full CSV -> tidy long Parquet
-  metrics.py        derived measures (waiting list, % within 18 weeks, 52+ weeks, median)
+  metrics.py        RTT v1 measures for all views (provider and population)
+  store.py          reading/writing the processed layer and precomputed metrics
   ods.py            organisation reference data (ODS ORD API) and successor resolution
   api/app.py        FastAPI app
 tests/
@@ -39,8 +40,19 @@ uv sync
 uv run pytest
 uv run nda catalogue-check
 uv run nda ingest-rtt path/to/Full-CSV-data-file.zip --vintage 2026-11-13
+uv run nda build-rtt-metrics                         # also runs after each ingest
 uv run uvicorn nhs_data_api.api.app:app --reload   # then open /docs
 ```
+
+## API (first slice)
+
+- `GET /v1/datasets`, `GET /v1/datasets/{id}`: catalogue, definitions and caveats.
+- `GET /v1/rtt/metrics`: the RTT v1 measures.
+  - `view`: `national`, `provider`, `provider_icb`, `population_icb` (residents, wherever
+    treated), `population_sub_icb`
+  - `org`, `period` or `period_from`, `treatment_function` (default `C_999`, all specialties)
+  - `measures` (comma-separated), `include_experimental`
+- `GET /v1/rtt/submissions`: providers submitting each month, and new non-submitters.
 
 ## Next steps
 

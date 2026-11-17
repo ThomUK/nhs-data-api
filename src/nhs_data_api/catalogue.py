@@ -12,7 +12,7 @@ from pydantic import BaseModel, ConfigDict, HttpUrl
 
 from .paths import CATALOGUE_DIR
 
-Status = Literal["draft", "stable", "deprecated"]
+Status = Literal["draft", "experimental", "stable", "deprecated"]
 
 
 class _Model(BaseModel):
@@ -40,6 +40,15 @@ class Measure(_Model):
     standard: str | None = None
     caveat: str | None = None
     status: Status = "stable"
+    requires_previous_month: bool = False
+    computed: bool = True  # False: describes source columns or non-tabular outputs only
+
+
+class View(_Model):
+    id: str
+    label: str
+    description: str
+    group_by: str | None
 
 
 class Caveat(_Model):
@@ -77,6 +86,7 @@ class Dataset(_Model):
     grain: list[str]
     dimensions: list[Dimension]
     measures: list[Measure]
+    views: list[View] = []
     caveats: list[Caveat] = []
     file_layout_notes: list[LayoutNote] = []
     known_format_changes: list[FormatChange] = []

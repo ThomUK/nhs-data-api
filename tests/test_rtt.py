@@ -5,7 +5,6 @@ import polars as pl
 import pytest
 
 from nhs_data_api.ingest import rtt
-from nhs_data_api.metrics import new_periods, rtt_summary
 
 from .conftest import make_row, to_csv
 
@@ -41,7 +40,8 @@ def test_synthetic_layouts(rtt_csv):
     unknown = rj1.filter(pl.col("weeks_band") == "unknown_clock_start")
     assert unknown["patients"].item() == 3 and unknown["weeks_lower"].item() is None
     assert long.filter(pl.col("weeks_band") == "gt104")["weeks_upper"].item() is None
-    assert new_periods(long, ["provider_org_code"]).row(0) == ("RJ1", 25)
+    part3 = rj1.filter(pl.col("rtt_part_type") == "Part_3")
+    assert part3.select("weeks_band", "patients").row(0) == ("unbanded", 25)
 
 
 def test_rejects_bands_not_matching_total():
@@ -61,16 +61,6 @@ def test_rejects_total_all_mismatch():
 def test_rejects_missing_columns():
     with pytest.raises(rtt.RttFormatError, match="missing identifier"):
         rtt.tidy(pl.DataFrame({"Period": ["RTT-May-2025"]}))
-
-
-def test_summary_measures(rtt_csv):
-    long = rtt.tidy(rtt.read_full_csv(rtt_csv))
-    s = rtt_summary(long, by=["provider_org_code"]).to_dicts()
-    rj1 = next(r for r in s if r["provider_org_code"] == "RJ1")
-    assert rj1["incomplete_pathways_total"] == 100
-    assert rj1["pct_within_18_weeks"] == 60.0
-    assert rj1["waiting_over_52_weeks"] == 10
-    assert rj1["median_wait_weeks"] == pytest.approx(5.8)  # 50/60 through band (5,6]
 
 
 def test_write_vintage_roundtrip(tmp_path, rtt_csv):

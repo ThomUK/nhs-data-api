@@ -22,10 +22,15 @@ N_BANDS = 105
 
 
 def make_row(provider: str, part: str, tf: str, bands: dict[int, int] | None,
-             unknown: int | None = None, period: str = "RTT-September-2025") -> list[str]:
-    """One row laid out as the real file does for that pathway type."""
-    ids = [period, "Y56", "LONDON", provider, f"{provider} TRUST", "QWE", "SE LONDON ICB",
-           "72Q", "SE LONDON SUB", part, part, tf, "Total" if tf == "C_999" else tf]
+             unknown: int | None = None, period: str = "RTT-September-2025",
+             commissioner: str = "72Q", commissioner_parent: str = "QKK") -> list[str]:
+    """One row laid out as the real file does for that pathway type.
+
+    Pass commissioner_parent="" for NHS England direct commissioning (no parent ICB).
+    """
+    ids = [period, "QKK", "SE LONDON ICB", provider, f"{provider} TRUST", commissioner_parent,
+           f"{commissioner_parent} ICB" if commissioner_parent else "", commissioner,
+           f"{commissioner} SUB-ICB", part, part, tf, "Total" if tf == "C_999" else tf]
     if bands is None:  # Part_3: only Total All
         return ids + [""] * N_BANDS + ["", "", str(unknown or 0)]
     counts = [bands.get(i, 0) for i in range(N_BANDS)]
