@@ -4,8 +4,9 @@ Public NHS England performance statistics served from modern API endpoints, buil
 equally useful to AI agents and human programmers. Every number comes back with its
 definition, source publication, licence and known caveats.
 
-**Status:** early spike. RTT parsing and a minimal API work against the real Aug and Sep 2026
-RTT files.
+**Status:** early spike. RTT ingestion, 28 measures and the API work on the real Aug and Sep
+2026 files, and match NHS England's published figures exactly
+([validation](docs/validation/rtt-2026-09.md)).
 
 ## Principles
 
@@ -25,6 +26,7 @@ src/nhs_data_api/
   catalogue.py      catalogue models and loader
   ingest/fetch.py   polite downloader into the immutable raw archive
   ingest/rtt.py     RTT Full CSV -> tidy long Parquet
+  ingest/rtt_published.py  reconcile against NHS England's published provider workbook
   metrics.py        RTT v1 measures for all views (provider and population)
   store.py          reading/writing the processed layer and precomputed metrics
   ods.py            organisation reference data (ODS ORD API) and successor resolution
@@ -41,6 +43,7 @@ uv run pytest
 uv run nda catalogue-check
 uv run nda ingest-rtt path/to/Full-CSV-data-file.zip --vintage 2026-11-13
 uv run nda build-rtt-metrics                         # also runs after each ingest
+uv run nda reconcile-rtt Incomplete-Provider.xlsx --period 2026-09-01
 uv run uvicorn nhs_data_api.api.app:app --reload   # then open /docs
 ```
 
@@ -56,8 +59,8 @@ uv run uvicorn nhs_data_api.api.app:app --reload   # then open /docs
 
 ## Next steps
 
-1. Check the derived national measures against NHS England's published headline figures
-   (see `docs/validation/rtt-2026-09.md`).
+1. Each month: ingest the Full CSV, then `nda reconcile-rtt` against the Incomplete Provider
+   workbook before publishing.
 2. Contact the NHS England statistics team about a supported machine-readable route
    ([ADR 0009](docs/adr/0009-source-acquisition.md)).
 3. Build the organisation table from ODS ([ADR 0008](docs/adr/0008-organisation-reference-data.md)).

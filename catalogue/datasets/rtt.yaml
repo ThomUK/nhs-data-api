@@ -107,8 +107,6 @@ measures:
     aggregation: ratio (recompute from components; never average)
     definition: Part_2 patients in bands with weeks_upper <= 18, divided by waiting_list_total, x 100.
     standard: NHS Constitution operational standard of 92%.
-    status: draft
-    caveat: Method to be verified against NHS England headline figures before release.
   - id: waiting_over_18_weeks
     label: Waiting more than 18 weeks
     unit: count
@@ -140,18 +138,16 @@ measures:
     aggregation: not additive (recompute from band counts)
     definition: >
       50th percentile of the Part_2 waiting-time distribution, by linear interpolation within
-      the weekly band containing the median patient.
-    status: draft
-    caveat: Method to be verified against NHS England published medians.
+      the weekly band containing the median patient. Same method as NHS England (matched
+      exactly for all providers and specialties, September 2026). Rounded to 1 decimal place.
   - id: p92_wait_weeks
     label: 92nd percentile wait (weeks)
     unit: weeks
     aggregation: not additive (recompute from band counts)
     definition: >
       92nd percentile of the Part_2 waiting-time distribution, interpolated as for the median.
-      If it falls in the open-ended top band, the band's lower bound (104) is returned.
-    status: draft
-    caveat: Method to be verified against NHS England published 92nd percentiles.
+      If it falls in the open-ended top band, the band's lower bound (104) is returned. Same
+      method as NHS England (matched exactly, September 2026). Rounded to 1 decimal place.
   - id: approaching_52_weeks
     label: Approaching 52 weeks
     unit: count
@@ -196,13 +192,11 @@ measures:
     unit: weeks
     aggregation: not additive
     definition: Median of the Part_1A distribution (known clock starts), interpolated within weekly bands.
-    status: draft
   - id: median_wait_completed_non_admitted_weeks
     label: Median wait of non-admitted completed pathways (weeks)
     unit: weeks
     aggregation: not additive
     definition: Median of the Part_1B distribution (known clock starts), interpolated within weekly bands.
-    status: draft
 
   # --- Month-on-month ---
   - id: waiting_list_change_mom
@@ -239,8 +233,21 @@ measures:
     aggregation: sum
     requires_previous_month: true
     definition: Change in waiting_over_52_weeks counting only providers that submitted in both months.
-  - id: unexplained_removals
-    label: Removals not explained by completed pathways (experimental)
+  - id: unreported_removals
+    label: Derived unreported completed pathways and removals
+    unit: count
+    aggregation: sum
+    requires_previous_month: true
+    definition: >
+      Previous month's waiting list + clock_starts - clock_stops_total - this month's waiting
+      list, from published totals. Matches NHS England's "Derived unreported completed
+      pathways and removals" (without estimates).
+    caveat: >
+      Not a count of patients removed without treatment: it also reflects validation removals,
+      pathways starting and stopping within the month, unreported additions, and providers
+      missing a submission. See unreported_removals_like_for_like.
+  - id: unreported_removals_like_for_like
+    label: Derived unreported completed pathways and removals, like-for-like (experimental)
     unit: count
     aggregation: sum
     status: experimental
@@ -273,6 +280,25 @@ measures:
       missing data.
 
 caveats:
+  - id: rtt-english-commissioners
+    applies_to: all
+    text: >
+      All measures exclude patients commissioned outside England (commissioner code NONC:
+      Wales, Scotland, Northern Ireland, overseas), matching NHS England's published figures.
+      In September 2026 this was 30,641 waiting-list pathways, weighted towards long waits.
+  - id: rtt-no-estimates
+    applies_to: all
+    text: >
+      Figures are sums of submitted data and do not include NHS England's estimates for
+      providers that did not submit. National headline figures in NHS England's press notice
+      do include estimates, so they can be higher (7.38m vs 7.07m waiting, September 2026).
+      Medians and 92nd percentiles in the press notice exclude estimates and match ours.
+  - id: rtt-persistent-non-submission
+    applies_to: all
+    text: >
+      new_non_submitters only detects providers that stopped submitting since the previous
+      month. Providers missing for longer are listed in NHS England's press notice and will be
+      detected once ODS reference data defines the expected set of providers.
   - id: rtt-independent-sector
     applies_to: all
     text: >

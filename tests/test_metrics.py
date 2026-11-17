@@ -26,6 +26,11 @@ def two_months() -> pl.DataFrame:
         make_row("NEW", "Part_2", "C_999", {1: 40}, period=SEP),
         make_row("RJ1", "Part_2", "C_999", {1: 4}, period=SEP, commissioner="14A",
                  commissioner_parent=""),
+        # Welsh patients treated at RJ1: excluded from every view, as NHS England does
+        make_row("RJ1", "Part_2", "C_999", {104: 9}, period=SEP, commissioner="NONC",
+                 commissioner_parent=""),
+        make_row("RJ1", "Part_3", "C_999", None, unknown=6, period=SEP, commissioner="NONC",
+                 commissioner_parent=""),
     ]
     return rtt.tidy(rtt.read_full_csv(to_csv(rows)))
 
@@ -66,7 +71,9 @@ def test_month_on_month_simple_vs_like_for_like(two_months):
     assert nat["waiting_list_change_mom_like_for_like"] == 2
     assert nat["waiting_over_52_weeks_change_mom_like_for_like"] == 13 - 10
     # 100 + 20 starts - 16 stops - 102 = 2
-    assert nat["unexplained_removals"] == 2
+    assert nat["unreported_removals_like_for_like"] == 2
+    # NHS England basis, from published totals: 150 + 20 - 16 - 142 = 12
+    assert nat["unreported_removals"] == 12
 
 
 def test_month_on_month_null_without_history(two_months):
@@ -75,7 +82,7 @@ def test_month_on_month_null_without_history(two_months):
     new = _row(prov, "NEW")
     assert new["waiting_list_change_mom"] is None
     assert new["waiting_list_change_mom_like_for_like"] is None
-    assert new["unexplained_removals"] is None
+    assert new["unreported_removals_like_for_like"] is None
 
 
 def test_population_view_groups_nhse_direct_commissioning(two_months):
@@ -84,10 +91,18 @@ def test_population_view_groups_nhse_direct_commissioning(two_months):
     assert _row(pop, "QKK")["waiting_list_total"] == 138
 
 
+def test_non_english_commissioners_excluded(two_months):
+    for view in VIEWS:
+        m = compute_view(two_months, view)
+        assert "NONC" not in m["org_code"].to_list()
+        assert m.filter(pl.col("period").cast(pl.Utf8) == "2025-09-01")[
+            "waiting_over_104_weeks"].sum() == 0
+
+
 def test_all_views_reconcile_to_national(two_months):
     m = compute_all_views(two_months).filter(pl.col("period").cast(pl.Utf8) == "2025-09-01")
     additive = ["waiting_list_total", "clock_starts", "clock_stops_total",
-                "waiting_list_change_mom_like_for_like", "unexplained_removals"]
+                "waiting_list_change_mom_like_for_like", "unreported_removals_like_for_like"]
     national = m.filter(pl.col("view") == "national").select(additive).row(0)
     for view in VIEWS:
         sums = m.filter(pl.col("view") == view).select(pl.col(additive).sum()).row(0)

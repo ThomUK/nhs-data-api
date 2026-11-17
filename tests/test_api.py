@@ -40,7 +40,8 @@ def test_metrics_latest_vintage_and_meta(client):
     assert row["period"] == "2025-09-01"
     assert row["waiting_list_total"] == 220  # revised vintage wins
     assert row["waiting_list_change_mom"] == 120
-    assert "unexplained_removals" not in row  # experimental: opt-in
+    assert "unreported_removals_like_for_like" not in row  # experimental: opt-in
+    assert "unreported_removals" in row
     meta = body["meta"]
     assert meta["licence"].startswith("Open Government Licence")
     assert meta["measures"]["pct_within_18_weeks"]["standard"].startswith("NHS Constitution")
@@ -54,8 +55,8 @@ def test_metrics_selection_views_and_ranges(client):
                                  "waiting_list_total"}
     exp = client.get("/v1/rtt/metrics", params={"view": "national",
                                                 "include_experimental": True}).json()
-    assert "unexplained_removals" in exp["data"][0]
-    assert exp["meta"]["measures"]["unexplained_removals"]["status"] == "experimental"
+    assert "unreported_removals_like_for_like" in exp["data"][0]
+    assert exp["meta"]["measures"]["unreported_removals_like_for_like"]["status"] == "experimental"
     assert client.get("/v1/rtt/metrics", params={"measures": "nope"}).status_code == 422
     assert client.get("/v1/rtt/metrics", params={"view": "bogus"}).status_code == 422
 

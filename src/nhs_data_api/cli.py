@@ -3,13 +3,15 @@
 from __future__ import annotations
 
 import argparse
+import sys
+from datetime import date
 from pathlib import Path
 
 from .catalogue import load_catalogue
 from .ingest import rtt
 from .ingest.fetch import archive_local, archive_url
 from .paths import PROCESSED_DIR
-from .store import build_rtt_metrics
+from .store import build_rtt_metrics, read_rtt_metrics
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -21,6 +23,10 @@ def main(argv: list[str] | None = None) -> None:
     ing.add_argument("--source-url", help="where a local file was downloaded from (provenance)")
     sub.add_parser("catalogue-check", help="validate catalogue YAML")
     sub.add_parser("build-rtt-metrics", help="recompute RTT measures for all views")
+    rec = sub.add_parser("reconcile-rtt",
+                         help="compare our measures with NHS England's Incomplete Provider xlsx")
+    rec.add_argument("workbook", help="path to the Incomplete Provider workbook")
+    rec.add_argument("--period", required=True, help="month as YYYY-MM-01")
     args = p.parse_args(argv)
 
     if args.cmd == "catalogue-check":
@@ -41,6 +47,19 @@ def main(argv: list[str] | None = None) -> None:
         print("metrics: " + ", ".join(str(p) for p in build_rtt_metrics(PROCESSED_DIR)))
     elif args.cmd == "build-rtt-metrics":
         print("metrics: " + ", ".join(str(p) for p in build_rtt_metrics(PROCESSED_DIR)))
+    elif args.cmd == "reconcile-rtt":
+        import polars as pl
+
+        from .ingest.rtt_published import read_provider_workbook, reconcile
+        ours = read_rtt_metrics(PROCESSED_DIR).filter(
+            (pl.col("view") == "provider") & (pl.col("period") == date.fromisoformat(args.period))
+        ).collect()
+        result = reconcile(read_provider_workbook(Path(args.workbook)), ours)
+        print(result.summary())
+        for name, frame in result.mismatches.items():
+            if not frame.is_empty():
+                print(f"\n{name}:\n{frame.head(10)}")
+        sys.exit(0 if result.ok else 1)
 
 
 if __name__ == "__main__":

@@ -22,7 +22,10 @@ VIEWS: dict[str, dict[str, str | None]] = {
     "population_sub_icb": {"code": "commissioner_org_code", "name": "commissioner_org_name"},
 }
 LONG_WAIT_THRESHOLDS = (52, 65, 78, 104)
-EXPERIMENTAL = ("unexplained_removals",)
+EXPERIMENTAL = ("unreported_removals_like_for_like",)
+# Patients whose care is commissioned outside England (Wales, Scotland, Northern Ireland,
+# overseas). NHS England's published figures exclude them at every level, so we do too.
+NON_ENGLISH_COMMISSIONER = "NONC"
 NHSE_DIRECT = ("NHSE", "NHS ENGLAND DIRECT COMMISSIONING (NOT ATTRIBUTED TO AN ICB)")
 
 _KEYS = ["period", "org_code", "org_name", "treatment_function_code"]
@@ -78,9 +81,14 @@ def percentile(long: pl.DataFrame, keys: list[str], q: float) -> pl.DataFrame:
     )
 
 
+def english_commissioned(long: pl.DataFrame) -> pl.DataFrame:
+    """Rows on NHS England's published basis: excludes non-English commissioners (NONC)."""
+    return long.filter(pl.col("commissioner_org_code") != NON_ENGLISH_COMMISSIONER)
+
+
 def compute_view(long: pl.DataFrame, view: str) -> pl.DataFrame:
     """All v1 measures for one view, one row per period x org x treatment function."""
-    df = _with_view(long, view)
+    df = _with_view(english_commissioned(long), view)
     keys = _KEYS
     name = df.group_by(["period", "org_code", "treatment_function_code"]).agg(
         pl.col("org_name").sort().last()
@@ -183,9 +191,12 @@ def _add_month_on_month(out: pl.DataFrame, df: pl.DataFrame) -> pl.DataFrame:
            # An org/specialty absent from one month genuinely had zero there
            .with_columns(pl.when(has_prev).then(pl.col(c).fill_null(0)) for c in z))
     like_for_like = ["waiting_list_change_mom_like_for_like",
-                     "waiting_over_52_weeks_change_mom_like_for_like", "unexplained_removals"]
+                     "waiting_over_52_weeks_change_mom_like_for_like",
+                     "unreported_removals_like_for_like"]
     return out.with_columns(
         (pl.col("waiting_list_total") - pl.col("_prev_list")).alias("waiting_list_change_mom"),
+        (pl.col("_prev_list") + pl.col("clock_starts") - pl.col("clock_stops_total")
+         - pl.col("waiting_list_total")).alias("unreported_removals"),
         (pl.col("waiting_over_52_weeks") - pl.col("_prev_52"))
         .alias("waiting_over_52_weeks_change_mom"),
         (pl.col("_list_m") - pl.col("_prev_list_m"))
@@ -193,7 +204,7 @@ def _add_month_on_month(out: pl.DataFrame, df: pl.DataFrame) -> pl.DataFrame:
         (pl.col("_52_m") - pl.col("_prev_52_m"))
         .alias("waiting_over_52_weeks_change_mom_like_for_like"),
         (pl.col("_prev_list_m") + pl.col("_starts_m") - pl.col("_stops_m") - pl.col("_list_m"))
-        .alias("unexplained_removals"),
+        .alias("unreported_removals_like_for_like"),
     ).with_columns(
         # No provider in the group submitted in both months: like-for-like is undefined
         pl.when(pl.col("_matched")).then(pl.col(c)).alias(c) for c in like_for_like
