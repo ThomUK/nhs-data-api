@@ -76,14 +76,50 @@ def measures_payload() -> dict:
     }
 
 
-def validation_payload(processed_dir: Path) -> dict:
+def lineage_payload(processed_dir: Path, raw_dir: Path) -> dict:
+    """Lineage links relevant to the loaded data, proposed links, and recode candidates."""
+    import yaml
+
+    from . import ods
+    from .paths import CATALOGUE_DIR
+    from .store import latest_rtt_lazy
+
+    snap = ods.latest_snapshot(raw_dir)
+    if snap is None:
+        return {"snapshot": None, "links": [], "proposed": [], "candidates": []}
+    orgs, _, _ = ods.load_snapshot(snap)
+    try:
+        seen = (latest_rtt_lazy(processed_dir).select("period", "provider_org_code")
+                .unique().collect())
+    except NoDataError:
+        seen = pl.DataFrame({"period": [], "provider_org_code": []},
+                            schema={"period": pl.Date, "provider_org_code": pl.Utf8})
+    in_data = set(seen["provider_org_code"])
+    links = ods.lineage_links(orgs, ods.curated_links())
+    name = lambda c: orgs[c].name if c in orgs else None  # noqa: E731
+    out_links = [{"from": lk.from_code, "from_name": name(lk.from_code), "to": lk.to_code,
+                  "to_name": name(lk.to_code), "effective": lk.effective, "source": lk.source,
+                  "evidence": lk.evidence.strip()}
+                 for lk in links if lk.from_code in in_data or lk.to_code in in_data]
+    proposed = [e for e in yaml.safe_load(
+        (CATALOGUE_DIR / "organisation_lineage.yaml").read_text()).get("links", [])
+        if e.get("status") != "confirmed"]
+    for e in proposed:
+        e["from_name"], e["to_name"] = name(e["from"]), name(e["to"])
+        e["evidence"] = e["evidence"].strip()
+    candidates = ods.recode_candidates(seen, orgs, ods.lineage_map(links))
+    return {"snapshot": snap.name, "links": out_links, "proposed": proposed,
+            "candidates": candidates}
+
+
+def validation_payload(processed_dir: Path, raw_dir: Path = RAW_DIR) -> dict:
     runs = [json.loads(p.read_text())
             for p in sorted((processed_dir / "validation").glob("*/*.json"))]
     try:
         subs = read_submissions(processed_dir).to_dicts()
     except NoDataError:
         subs = []
-    return {"runs": runs, "submissions": subs}
+    return {"runs": runs, "submissions": subs, "lineage": lineage_payload(processed_dir, raw_dir)}
 
 
 def build_site(out_dir: Path | None = None, processed_dir: Path = PROCESSED_DIR,
@@ -93,7 +129,7 @@ def build_site(out_dir: Path | None = None, processed_dir: Path = PROCESSED_DIR,
     written = [
         _write(out_dir / "calendar.json", calendar_payload(today, raw_dir)),
         _write(out_dir / "measures.json", measures_payload()),
-        _write(out_dir / "validation.json", validation_payload(processed_dir)),
+        _write(out_dir / "validation.json", validation_payload(processed_dir, raw_dir)),
     ]
     try:
         metrics = read_rtt_metrics(processed_dir).collect()

@@ -28,26 +28,70 @@ function runCard(run) {
     ...samples);
 }
 
+const REASON = {
+  merged_or_recoded: ["good", "→", "Merged or recoded"],
+  closed: ["neutral", "·", "Closed (ODS)"],
+  not_submitting: ["serious", "!", "Not submitted"],
+};
+
+function orgLine(code, name, extra) {
+  return el("div", { style: "margin:2px 0" }, el("span", { class: "filename", text: `${code} ` }), name || "", extra || null);
+}
+
 function submissions(subs) {
+  const rows = [...subs].reverse().map((s) => {
+    const nn = s.new_non_submitters;
+    const newCell = nn === null ? el("span", { class: "muted small", text: "Previous month not loaded" })
+      : nn.length === 0 ? status("good", "✓", "None")
+      : el("div", { class: "small" }, nn.map((p) => {
+        const [kind, icon, label] = REASON[p.reason] || REASON.not_submitting;
+        return orgLine(p.code, p.name, el("span", { style: "margin-left:8px" }, status(kind, icon,
+          p.reason === "merged_or_recoded" ? `${label} → ${p.successor}` : p.reason === "closed" ? `${label} ${p.closed_on}` : label)));
+      }));
+    const pers = s.persistent_non_submitters || [];
+    const persCell = pers.length === 0 ? el("span", { class: "muted small", text: "–" })
+      : el("div", { class: "small" }, pers.map((p) => orgLine(p.code, p.name,
+        el("span", { class: "muted", text: ` · last reported ${fmtMonth(p.last_reported)}` }))));
+    return el("tr", {}, el("td", { text: fmtMonth(s.period) }),
+      el("td", { class: "num", text: nf.format(s.providers_submitting) }), el("td", {}, newCell), el("td", {}, persCell));
+  });
   return el("div", { class: "table-wrap card", style: "padding:0" }, el("table", {},
-    el("thead", {}, el("tr", {}, el("th", { text: "Month" }), el("th", { class: "num", text: "Providers submitting" }),
-      el("th", { text: "Submitted last month but not this month" }))),
-    el("tbody", {}, subs.map((s) => el("tr", {},
-      el("td", { text: fmtMonth(s.period) }),
-      el("td", { class: "num", text: nf.format(s.providers_submitting) }),
-      el("td", {}, s.new_non_submitters === null ? el("span", { class: "muted small", text: "Previous month not loaded" })
-        : s.new_non_submitters.length === 0 ? status("good", "✓", "None")
-        : el("div", {}, status("warning", "!", `${s.new_non_submitters.length} providers`),
-          el("div", { class: "small", style: "margin-top:4px" },
-            s.new_non_submitters.map((p) => el("div", {}, el("span", { class: "filename", text: `${p.code} ` }), p.name))))))))));
+    el("thead", {}, el("tr", {}, el("th", { text: "Month" }), el("th", { class: "num", text: "Providers" }),
+      el("th", { text: "Submitted last month but not this month" }), el("th", { text: "NHS trusts still not submitting" }))),
+    el("tbody", {}, rows)));
+}
+
+function lineage(l) {
+  if (!l || !l.snapshot) return [el("p", { class: "muted", text: "No ODS snapshot yet (nda fetch-ods)." })];
+  const out = [el("p", { class: "small muted", text: `ODS snapshot ${l.snapshot}. Applied links make a merged or recoded provider count as the same provider in like-for-like measures and submission checks. Published figures stay under the publisher's codes.` })];
+  out.push(el("div", { class: "table-wrap card", style: "padding:0" }, el("table", {},
+    el("thead", {}, el("tr", {}, el("th", { text: "From" }), el("th", { text: "To" }), el("th", { text: "Effective" }), el("th", { text: "Source" }))),
+    el("tbody", {}, l.links.map((k) => el("tr", {},
+      el("td", {}, orgLine(k.from, k.from_name)), el("td", {}, orgLine(k.to, k.to_name)),
+      el("td", { text: k.effective ? fmtMonth(k.effective) : "–" }),
+      el("td", {}, el("span", { class: "chip", text: k.source === "ods" ? "ODS successor" : "Curated" }),
+        k.source === "curated" ? el("div", { class: "small muted", style: "max-width:46ch", text: k.evidence }) : null)))))));
+  const pending = [...l.proposed.map((p) => ({ ...p, kind: "proposed" })),
+    ...l.candidates.filter((c) => !c.applied && !l.proposed.some((p) => p.from === c.from && p.to === c.to))
+      .map((c) => ({ from: c.from, from_name: c.from_name, to: c.to, to_name: c.to_name, kind: "candidate",
+        evidence: `Same address (${c.address}); last reported ${fmtMonth(c.last_reported)}, new code from ${fmtMonth(c.first_reported)}${c.operator_change ? `; operator ${c.operator_change}` : ""}.` }))];
+  out.push(el("h3", { style: "margin:20px 0 8px", text: "Awaiting review" }));
+  if (!pending.length) out.push(status("good", "✓", "Nothing awaiting review"));
+  else out.push(el("p", { class: "small muted", text: "Set status: confirmed in catalogue/organisation_lineage.yaml to apply a link." }),
+    el("div", { class: "table-wrap card", style: "padding:0" }, el("table", {}, el("tbody", {}, pending.map((p) => el("tr", {},
+      el("td", {}, status("warning", "?", p.kind === "proposed" ? "Proposed" : "Detected")),
+      el("td", {}, orgLine(p.from, p.from_name), el("div", { class: "muted small", text: "→" }), orgLine(p.to, p.to_name)),
+      el("td", { class: "small", style: "max-width:60ch", text: p.evidence })))))));
+  return out;
 }
 
 getJSON("data/validation.json").then((v) => {
   const out = [el("h2", { style: "margin-top:8px", text: "Reconciliation runs" })];
   if (v.runs.length) out.push(...[...v.runs].reverse().map(runCard));
   else out.push(el("p", { class: "muted", text: "No reconciliation runs recorded yet." }));
-  out.push(el("h2", { text: "Submission changes" }),
-    el("p", { class: "small muted", text: "Only detects providers that stopped submitting since the previous month. Long-running non-submitters need the ODS expected-provider list." }),
-    submissions(v.submissions));
+  out.push(el("h2", { text: "Submissions" }),
+    el("p", { class: "small muted", text: "Reasons use ODS successor records and curated lineage links. NHS trusts still not submitting: trusts (ODS role RO197) that reported in an earlier loaded month, are missing for at least two months, are not closed and are not carried by a submitting successor." }),
+    submissions(v.submissions),
+    el("h2", { text: "Organisation lineage" }), ...lineage(v.lineage));
   content.replaceChildren(...out);
 }).catch((e) => showError(content, e));

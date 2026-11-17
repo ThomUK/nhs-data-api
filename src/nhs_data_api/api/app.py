@@ -11,7 +11,7 @@ from fastapi import FastAPI, HTTPException, Query
 from .. import __version__
 from ..catalogue import load_catalogue
 from ..paths import PROCESSED_DIR
-from ..store import NoDataError, read_rtt_metrics, read_submissions
+from ..store import NoDataError, read_organisations, read_rtt_metrics, read_submissions
 
 app = FastAPI(
     title="NHS Data API (working title)",
@@ -130,3 +130,51 @@ def rtt_submissions() -> dict:
         raise HTTPException(503, str(exc)) from exc
     return {"data": df.to_dicts(),
             "meta": _meta("rtt", measures=["providers_submitting", "new_non_submitters"])}
+
+
+def _org_record(row: dict) -> dict:
+    keep = ["org_code", "name", "sector", "primary_role", "primary_role_name", "status",
+            "operational_start", "operational_end", "legal_start", "legal_end", "closed_on",
+            "postcode", "address_line1", "town", "operated_by", "successors", "predecessors"]
+    return {k: row.get(k) for k in keep}
+
+
+@app.get("/v1/organisations")
+def list_organisations(
+    q: str | None = Query(None, description="Search name or ODS code, e.g. 'bristol' or 'RA7'"),
+    sector: Literal["nhs_trust", "independent_sector", "commissioner", "other"] | None = None,
+    limit: int = Query(50, ge=1, le=500),
+) -> dict:
+    """Organisations that appear in the statistics, from the ODS snapshot."""
+    try:
+        df = read_organisations(PROCESSED_DIR)
+    except NoDataError as exc:
+        raise HTTPException(503, str(exc)) from exc
+    if q:
+        needle = q.strip().upper()
+        df = df.filter(pl.col("org_code").str.to_uppercase().eq(needle)
+                       | pl.col("name").str.to_uppercase().str.contains(needle, literal=True))
+    if sector:
+        df = df.filter(pl.col("sector") == sector)
+    rows = df.sort("name").head(limit).to_dicts()
+    return {"data": [_org_record(r) for r in rows],
+            "meta": _meta("organisations", rows=df.height, truncated=df.height > limit)}
+
+
+@app.get("/v1/organisations/{org_code}")
+def get_organisation(org_code: str) -> dict:
+    """One organisation, with ODS successor/predecessor links and curated lineage links."""
+    from .. import ods
+    try:
+        df = read_organisations(PROCESSED_DIR)
+    except NoDataError as exc:
+        raise HTTPException(503, str(exc)) from exc
+    code = org_code.upper()
+    row = df.filter(pl.col("org_code") == code)
+    if row.is_empty():
+        raise HTTPException(404, f"{code} is not an organisation in the statistics")
+    curated = [{"from": lk.from_code, "to": lk.to_code, "effective": lk.effective,
+                "evidence": lk.evidence.strip()}
+               for lk in ods.curated_links() if code in (lk.from_code, lk.to_code)]
+    return {"data": {**_org_record(row.to_dicts()[0]), "curated_lineage": curated},
+            "meta": _meta("organisations")}

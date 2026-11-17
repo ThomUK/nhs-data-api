@@ -62,7 +62,10 @@ Rebuild its data with `uv run nda build-site`.
     treated), `population_sub_icb`
   - `org`, `period` or `period_from`, `treatment_function` (default `C_999`, all specialties)
   - `measures` (comma-separated), `include_experimental`
-- `GET /v1/rtt/submissions`: providers submitting each month, and new non-submitters.
+- `GET /v1/rtt/submissions`: providers submitting each month, why providers stopped reporting
+  (merged or recoded, closed, not submitted), and NHS trusts still not submitting.
+- `GET /v1/organisations?q=&sector=`, `GET /v1/organisations/{code}`: ODS organisation table
+  with successor and curated lineage links.
 
 ## Next steps
 
@@ -70,7 +73,8 @@ Rebuild its data with `uv run nda build-site`.
    workbook before publishing.
 2. Contact the NHS England statistics team about a supported machine-readable route
    ([ADR 0009](docs/adr/0009-source-acquisition.md)).
-3. Build the organisation table from ODS ([ADR 0008](docs/adr/0008-organisation-reference-data.md)).
+3. Refresh the ODS snapshot (`nda fetch-ods`) when new organisations appear, and review lineage
+   candidates on the admin site's validation page.
 4. Inspect WLMDS files and complete `catalogue/datasets/wlmds.yaml`.
 5. MCP server over the API ([ADR 0011](docs/adr/0011-agent-interface.md)), API keys and metering.
 

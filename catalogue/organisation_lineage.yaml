@@ -1,0 +1,57 @@
+# Organisation lineage links that ODS does not record as successions.
+#
+# ODS successor records (for example North Bristol NHS Trust RVJ -> RA7 from 2026-07-01) are
+# applied automatically. Links here cover cases such as a change of operator, where ODS
+# issues new site codes without a successor record. Only `status: confirmed` links are
+# applied; `proposed` links are shown on the admin site for review.
+#
+# Applied links affect like-for-like month-on-month measures and submission checks only.
+# Published figures are always reported under the code the publisher used.
+
+links:
+  - from: NTP15
+    to: F0U7A
+    effective: 2026-09-01
+    status: confirmed
+    evidence: >
+      Same site in ODS (King George Hospital, IG3 8YY); operator changed from Practice Plus
+      Group (NTP) to N1Y5A. Old code last reports August 2026, new code first reports
+      September 2026 with a similar list (4,951 -> 4,929).
+  - from: NTPH5
+    to: K1I5A
+    effective: 2026-09-01
+    status: confirmed
+    evidence: >
+      Same site in ODS (20 Brest Road, PL6 5XP); operator changed NTP -> N1Y5A. Old code last
+      reports August 2026, new code first reports September 2026.
+  - from: NTP13
+    to: I9H0R
+    effective: 2026-09-01
+    status: confirmed
+    evidence: >
+      Same site in ODS (2 Lindrick Way, S43 4XE); operator changed NTP -> N1Y5A. Old code last
+      reports August 2026, new code first reports September 2026.
+  - from: NTP16
+    to: Z6G3Z
+    effective: 2026-09-01
+    status: confirmed
+    evidence: >
+      Same site in ODS (Godden Way, ME8 6AD); operator changed NTP -> N1Y5A. Old code last
+      reports August 2026, new code first reports September 2026.
+  - from: M2Y6D
+    to: E6B7Z
+    effective: 2026-09-01
+    status: proposed
+    evidence: >
+      Probably the same hospital: Practice Plus Group Hospital Birmingham, 22 Somerset Road
+      B15 2QQ (operator NTP) and Practice Plus Group Hospital, Birmingham, B15 2QD (operator
+      N1Y5A). Postcodes differ, so the automatic same-address check does not match it.
+      Confirm before applying.
+  - from: NX5
+    to: NX501
+    effective: 2025-11-01
+    status: proposed
+    evidence: >
+      Anglia Community Eye Service Ltd reported under its company code NX5 until October 2025
+      and under site code NX501 (same name, Cromwell Road PE14 0SN, operated by NX5) from
+      November 2025. Found by the same-address check. Confirm before applying.

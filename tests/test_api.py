@@ -69,3 +69,24 @@ def test_missing_period_for_known_org_explains_why(client):
 def test_submissions(client):
     data = client.get("/v1/rtt/submissions").json()["data"]
     assert data[-1]["providers_submitting"] == 2
+
+
+def test_organisation_endpoints(tmp_path, monkeypatch):
+    import polars as pl
+    (tmp_path / "ods").mkdir()
+    pl.DataFrame({"org_code": ["RA7", "RVJ", "NTP15"],
+                  "name": ["BRISTOL NHS FOUNDATION TRUST", "NORTH BRISTOL NHS TRUST",
+                           "PRACTICE PLUS GROUP HOSPITAL - ILFORD"],
+                  "sector": ["nhs_trust", "nhs_trust", "independent_sector"],
+                  "successors": [[], ["RA7"], []], "predecessors": [["RVJ"], [], []]}
+                 ).write_parquet(tmp_path / "ods" / "organisations.parquet")
+    monkeypatch.setattr(app_module, "PROCESSED_DIR", tmp_path)
+    c = TestClient(app_module.app)
+    found = c.get("/v1/organisations", params={"q": "bristol"}).json()
+    assert [o["org_code"] for o in found["data"]] == ["RA7", "RVJ"]
+    assert found["meta"]["licence"].startswith("Open Government Licence")
+    sector = c.get("/v1/organisations", params={"sector": "independent_sector"}).json()
+    assert sector["meta"]["rows"] == 1
+    one = c.get("/v1/organisations/ntp15").json()["data"]
+    assert one["curated_lineage"][0]["to"] == "F0U7A"
+    assert c.get("/v1/organisations/XXX").status_code == 404

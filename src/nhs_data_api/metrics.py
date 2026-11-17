@@ -86,9 +86,48 @@ def english_commissioned(long: pl.DataFrame) -> pl.DataFrame:
     return long.filter(pl.col("commissioner_org_code") != NON_ENGLISH_COMMISSIONER)
 
 
-def compute_view(long: pl.DataFrame, view: str) -> pl.DataFrame:
+def with_lineage(long: pl.DataFrame, links=None, max_hops: int = 5, offset: str = "1mo",
+                 column: str = "provider_lineage_code") -> pl.DataFrame:
+    """Add `column`: the provider carrying this one's activity after mergers and recodes.
+
+    `links` are ods.LineageLink-like objects (from_code, to_code, effective). A link applies
+    to a row when its period plus `offset` is on or after the link's effective date. With
+    "1mo" (as of the following month), June figures of a trust merged in July count towards
+    its successor when compared with July; with "0mo" (as of the row's own month) they do
+    not. Codes with several outgoing links (splits) are not mapped.
+    """
+    out = long.with_columns(pl.col("provider_org_code").alias(column))
+    if not links:
+        return out
+    table = pl.DataFrame(
+        {"_from": [lk.from_code for lk in links], "_to": [lk.to_code for lk in links],
+         "_eff": [lk.effective for lk in links]},
+        schema={"_from": pl.Utf8, "_to": pl.Utf8, "_eff": pl.Date},
+    ).filter(pl.col("_from").is_unique())
+    out = out.with_columns(_cmp=pl.col("period").dt.offset_by(offset))
+    for _ in range(max_hops):
+        out = out.join(table, left_on=column, right_on="_from", how="left")
+        apply = pl.col("_to").is_not_null() & (
+            pl.col("_eff").is_null() | (pl.col("_eff") <= pl.col("_cmp")))
+        if not out.select(apply.any()).item():
+            out = out.drop("_to", "_eff")
+            break
+        out = out.with_columns(pl.when(apply).then(pl.col("_to")).otherwise(pl.col(column))
+                               .alias(column)).drop("_to", "_eff")
+    return out.drop("_cmp")
+
+
+def compute_view(long: pl.DataFrame, view: str, lineage=None) -> pl.DataFrame:
     """All v1 measures for one view, one row per period x org x treatment function."""
-    df = _with_view(english_commissioned(long), view)
+    # Two lineage codes per row: as of its own month (when it is the current month of a
+    # comparison) and as of the next month (when it is the previous month).
+    base = with_lineage(english_commissioned(long), lineage, offset="0mo",
+                        column="_lineage_now")
+    df = _with_view(with_lineage(base, lineage, offset="1mo", column="_lineage_next"), view)
+    # Previous-month grouping key: in the provider view, a predecessor's rows count towards
+    # its successor (so a merger is not a like-for-like change); other views are unchanged.
+    df = df.with_columns(_mom_key=pl.col("_lineage_next") if view == "provider"
+                         else pl.col("org_code"))
     keys = _KEYS
     name = df.group_by(["period", "org_code", "treatment_function_code"]).agg(
         pl.col("org_name").sort().last()
@@ -153,13 +192,18 @@ def _add_month_on_month(out: pl.DataFrame, df: pl.DataFrame) -> pl.DataFrame:
     that submitted in both months. All are null where the previous month is not loaded.
     """
     grp = ["org_code", "treatment_function_code"]
-    present = df.select("period", "provider_org_code").unique()
-    loaded = present["period"].unique()
-    # Rows whose provider also submitted in the previous / next month
-    in_prev = present.with_columns(pl.col("period").dt.offset_by("1mo"), _in_prev=pl.lit(True))
-    in_next = present.with_columns(pl.col("period").dt.offset_by("-1mo"), _in_next=pl.lit(True))
-    flagged = (df.join(in_prev, on=["period", "provider_org_code"], how="left")
-               .join(in_next, on=["period", "provider_org_code"], how="left"))
+    # Matching uses lineage codes: a provider and its successor count as the same provider.
+    # A current-month row (lineage as of its month) is matched if some previous-month row has
+    # the same lineage as of the following month, and vice versa.
+    loaded = df["period"].unique()
+    in_prev = (df.select("period", pl.col("_lineage_next").alias("_key")).unique()
+               .with_columns(pl.col("period").dt.offset_by("1mo"), _in_prev=pl.lit(True)))
+    in_next = (df.select("period", pl.col("_lineage_now").alias("_key")).unique()
+               .with_columns(pl.col("period").dt.offset_by("-1mo"), _in_next=pl.lit(True)))
+    flagged = (df.join(in_prev, left_on=["period", "_lineage_now"], right_on=["period", "_key"],
+                       how="left")
+               .join(in_next, left_on=["period", "_lineage_next"], right_on=["period", "_key"],
+                     how="left"))
     n, p2 = pl.col("patients"), _part("Part_2")
     stops = _part("Part_1A") | _part("Part_1B")
     m_lo = pl.col("weeks_lower") >= 52
@@ -171,7 +215,9 @@ def _add_month_on_month(out: pl.DataFrame, df: pl.DataFrame) -> pl.DataFrame:
         n.filter(stops).sum().alias("_stops_m"),
     )
     before = (
-        flagged.filter(pl.col("_in_next").fill_null(False)).group_by(["period", *grp]).agg(
+        flagged.filter(pl.col("_in_next").fill_null(False))
+        .with_columns(org_code=pl.col("_mom_key"))
+        .group_by(["period", *grp]).agg(
             n.filter(p2).sum().alias("_prev_list_m"),
             n.filter(p2 & m_lo).sum().alias("_prev_52_m"),
         ).with_columns(pl.col("period").dt.offset_by("1mo"))
@@ -211,33 +257,79 @@ def _add_month_on_month(out: pl.DataFrame, df: pl.DataFrame) -> pl.DataFrame:
     ).drop([*z, "_matched", "_prev_list", "_prev_52"])
 
 
-def compute_all_views(long: pl.DataFrame) -> pl.DataFrame:
-    return pl.concat([compute_view(long, v) for v in VIEWS], how="vertical_relaxed")
+def compute_all_views(long: pl.DataFrame, lineage=None) -> pl.DataFrame:
+    """All views. `lineage`: ods.LineageLink-like links applied to like-for-like matching."""
+    return pl.concat([compute_view(long, v, lineage) for v in VIEWS], how="vertical_relaxed")
 
 
-def submission_changes(long: pl.DataFrame) -> pl.DataFrame:
-    """Per period: providers submitting, and providers present last month but missing now."""
-    seen = long.select("period", "provider_org_code", "provider_org_name").unique()
-    by_period = seen.group_by("period").agg(
-        pl.col("provider_org_code").n_unique().alias("providers_submitting")
-    )
-    prev = seen.with_columns(pl.col("period").dt.offset_by("1mo"))
-    periods = by_period["period"].to_list()
-    missing = (
-        prev.filter(pl.col("period").is_in(periods))
-        .join(seen, on=["period", "provider_org_code"], how="anti")
-        .group_by("period").agg(
-            pl.struct(code="provider_org_code", name="provider_org_name")
-            .alias("new_non_submitters")
-        )
-    )
-    has_prev = prev["period"].unique().to_list()
-    return (
-        by_period.join(missing, on="period", how="left")
-        .with_columns(
-            pl.when(pl.col("period").is_in(has_prev))
-            .then(pl.col("new_non_submitters").fill_null([]))
-            .alias("new_non_submitters")
-        )
-        .sort("period")
-    )
+def submission_status(seen: pl.DataFrame, links=None,
+                      orgs: pl.DataFrame | None = None) -> pl.DataFrame:
+    """Per period: providers submitting, why last month's providers are missing, and NHS
+    trusts that have been missing for longer.
+
+    `seen` has (period, provider_org_code, provider_org_name). `links` are lineage links
+    (mergers and recodes); `orgs` is the ODS organisation table (ods.organisations_frame),
+    used for closure dates and to know which providers are NHS trusts.
+
+    Reasons for a provider that submitted last month but not this month:
+      merged_or_recoded  its lineage successor is submitting this month
+      closed             ODS records it as closed by the end of this month
+      not_submitting     anything else (usually a missed submission)
+    Persistent non-submitters: NHS trusts (ODS role RO197) seen in an earlier month, missing
+    for at least two months, not closed and not carried by a submitting successor.
+    """
+    seen = seen.unique(["period", "provider_org_code"])
+    mapped = with_lineage(seen, links)
+    periods = sorted(seen["period"].unique().to_list())
+    names = dict(zip(seen["provider_org_code"], seen["provider_org_name"], strict=True))
+    closed, trusts = {}, set()
+    if orgs is not None:
+        closed = {c: d for c, d in zip(orgs["org_code"], orgs["closed_on"], strict=True) if d}
+        trusts = set(orgs.filter(pl.col("sector") == "nhs_trust")["org_code"])
+    codes = {p: set(seen.filter(pl.col("period") == p)["provider_org_code"]) for p in periods}
+    successor = {(r["period"], r["provider_org_code"]): r["provider_lineage_code"]
+                 for r in mapped.iter_rows(named=True)}
+    last_seen: dict[str, object] = {}
+    rows = []
+    for i, p in enumerate(periods):
+        month_end = (pl.Series([p]).dt.offset_by("1mo").item())
+        new, persistent = None, []
+        if i > 0:
+            prev = periods[i - 1]
+            new = []
+            for code in sorted(codes[prev] - codes[p]):
+                target = successor.get((prev, code), code)
+                if target != code and target in codes[p]:
+                    reason = "merged_or_recoded"
+                elif code in closed and closed[code] < month_end:
+                    reason = "closed"
+                else:
+                    reason = "not_submitting"
+                new.append({"code": code, "name": names.get(code), "reason": reason,
+                            "successor": target if target != code else None,
+                            "closed_on": closed.get(code)})
+            for code, seen_at in sorted(last_seen.items()):
+                if code in codes[p] or code in codes[prev] or code not in trusts:
+                    continue
+                if code in closed and closed[code] < month_end:
+                    continue
+                target = successor.get((seen_at, code), code)
+                if target != code and target in codes[p]:
+                    continue
+                persistent.append({"code": code, "name": names.get(code),
+                                   "last_reported": seen_at})
+        rows.append({"period": p, "providers_submitting": len(codes[p]),
+                     "new_non_submitters": new, "persistent_non_submitters": persistent})
+        for code in codes[p]:
+            last_seen[code] = p
+    item = pl.Struct({"code": pl.Utf8, "name": pl.Utf8, "reason": pl.Utf8,
+                      "successor": pl.Utf8, "closed_on": pl.Date})
+    pitem = pl.Struct({"code": pl.Utf8, "name": pl.Utf8, "last_reported": pl.Date})
+    return pl.DataFrame(rows, schema={"period": pl.Date, "providers_submitting": pl.UInt32,
+                                      "new_non_submitters": pl.List(item),
+                                      "persistent_non_submitters": pl.List(pitem)})
+
+
+def submission_changes(seen: pl.DataFrame) -> pl.DataFrame:
+    """Backwards-compatible alias: submission status without ODS context."""
+    return submission_status(seen)

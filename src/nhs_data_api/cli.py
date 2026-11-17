@@ -26,6 +26,7 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("catalogue-check", help="validate catalogue YAML")
     sub.add_parser("build-rtt-metrics", help="recompute RTT measures for all views")
     sub.add_parser("rebuild-rtt", help="regenerate processed RTT data from the raw archive")
+    sub.add_parser("fetch-ods", help="snapshot ODS records for every organisation in the data")
     arc = sub.add_parser("archive", help="copy a manually downloaded file into the raw archive")
     arc.add_argument("files", nargs="+")
     arc.add_argument("--dataset", required=True)
@@ -60,6 +61,23 @@ def main(argv: list[str] | None = None) -> None:
         df = rtt.tidy(rtt.read_full_csv(Path(src)))
         out = rtt.write_vintage(df, PROCESSED_DIR / "rtt", args.vintage)
         print(f"wrote {df.height:,} rows to {out}")
+        print("metrics: " + ", ".join(str(p) for p in build_rtt_metrics(PROCESSED_DIR)))
+    elif args.cmd == "fetch-ods":
+        import polars as pl
+
+        from . import ods
+        from .store import latest_rtt_lazy
+        cols = ["provider_org_code", "provider_parent_org_code", "commissioner_org_code",
+                "commissioner_parent_org_code"]
+        codes = set()
+        for c in cols:
+            codes |= set(latest_rtt_lazy(PROCESSED_DIR).select(pl.col(c).unique())
+                         .collect()[c].drop_nulls())
+        out = RAW_DIR / "ods" / date.today().isoformat()
+        print(f"fetching {len(codes)} codes (plus successors) into {out}")
+        ods.fetch_snapshot(codes, out)
+        orgs, roles, missing = ods.load_snapshot(out)
+        print(f"{len(orgs)} organisations, {len(missing)} not found: {sorted(missing)}")
         print("metrics: " + ", ".join(str(p) for p in build_rtt_metrics(PROCESSED_DIR)))
     elif args.cmd == "rebuild-rtt":
         for path in rebuild_rtt(PROCESSED_DIR, RAW_DIR):

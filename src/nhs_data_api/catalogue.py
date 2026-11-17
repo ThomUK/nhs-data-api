@@ -80,7 +80,7 @@ class Dataset(_Model):
     source_page: HttpUrl
     licence: Licence
     attribution: str
-    frequency: Literal["weekly", "monthly", "quarterly", "annual"]
+    frequency: Literal["daily", "weekly", "monthly", "quarterly", "annual"]
     geography: str
     coverage_start: date | None
     grain: list[str]

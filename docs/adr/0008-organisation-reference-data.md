@@ -26,3 +26,24 @@ successor/predecessor links (`Succs`).
 - No registration dependency for the first release.
 - **Risk:** the ORD API may be deprecated in favour of FHIR. Check its status before
   relying on it in production; the interface boundary keeps the switch cheap.
+
+## Update 2026-11-17: implemented
+
+- `nda fetch-ods` snapshots ORD records for every organisation code in the loaded statistics
+  (734 in November 2026, about three minutes at a gentle request rate) into
+  `raw/ods/<date>/organisations.jsonl`, plus the ORD role list. The organisation table
+  (`processed/ods/organisations.parquet`) adds sector (NHS trust, independent sector,
+  commissioner), address, operator (RE6) and closure dates.
+- **Lineage** combines ODS successor records with curated links in
+  `catalogue/organisation_lineage.yaml`. Curated links are needed because a change of
+  operator issues new site codes without a successor record (Practice Plus Group sites,
+  September 2026). Only `confirmed` links are applied; `proposed` links and automatically
+  detected candidates (a provider stops as a new code starts at the same address) are listed
+  on the admin site's validation page for review.
+- Links take effect from their effective date, and each row carries two lineage codes (as of
+  its own month and as of the next month), so a merger only joins the two months that span
+  it. Like-for-like measures and submission checks use lineage; published figures always stay
+  under the publisher's codes.
+- Submission status classifies each provider that stops reporting (merged or recoded, closed,
+  not submitted) and lists NHS trusts missing for two months or more.
+- `/v1/organisations` and `/v1/organisations/{code}` serve the table.

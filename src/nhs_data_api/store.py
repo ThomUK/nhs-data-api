@@ -6,7 +6,8 @@ from pathlib import Path
 
 import polars as pl
 
-from .metrics import compute_all_views, submission_changes
+from .metrics import compute_all_views, submission_status
+from .paths import RAW_DIR
 
 
 class NoDataError(LookupError):
@@ -33,8 +34,31 @@ def metrics_dir(processed_dir: Path) -> Path:
     return processed_dir / "rtt_metrics"
 
 
-def build_rtt_metrics(processed_dir: Path) -> tuple[Path, Path]:
-    """Recompute all measures for all views from the latest vintages. Cheap; run after ingest."""
+def ods_context(raw_dir: Path, processed_dir: Path | None = None):
+    """Organisation table and lineage links from the latest ODS snapshot, or (None, None).
+
+    Also writes processed/ods/organisations.parquet when processed_dir is given.
+    """
+    from . import ods
+
+    snap = ods.latest_snapshot(raw_dir)
+    if snap is None:
+        return None, None
+    orgs, roles, _ = ods.load_snapshot(snap)
+    frame = ods.organisations_frame(orgs, roles)
+    if processed_dir is not None:
+        out = processed_dir / "ods"
+        out.mkdir(parents=True, exist_ok=True)
+        frame.write_parquet(out / "organisations.parquet")
+    return frame, ods.lineage_links(orgs, ods.curated_links())
+
+
+def build_rtt_metrics(processed_dir: Path, raw_dir: Path | None = None) -> tuple[Path, Path]:
+    """Recompute all measures for all views from the latest vintages. Cheap; run after ingest.
+
+    Uses the latest ODS snapshot in the raw archive, if any, for organisation lineage.
+    """
+    orgs, links = ods_context(raw_dir or RAW_DIR, processed_dir)
     lf = latest_rtt_lazy(processed_dir)
     periods = sorted(lf.select(pl.col("period").unique()).collect()["period"].to_list())
     # Month-on-month measures only need the previous month, so compute each month from a
@@ -46,14 +70,14 @@ def build_rtt_metrics(processed_dir: Path) -> tuple[Path, Path]:
                 window[0].year * 12 + window[0].month) != 1:
             window = [period]  # previous calendar month not loaded
         long = lf.filter(pl.col("period").is_in(window)).collect()
-        frames.append(compute_all_views(long).filter(pl.col("period") == period))
+        frames.append(compute_all_views(long, links).filter(pl.col("period") == period))
         del long
     out = metrics_dir(processed_dir)
     out.mkdir(parents=True, exist_ok=True)
     m, s = out / "metrics.parquet", out / "submissions.parquet"
     pl.concat(frames, how="vertical_relaxed").write_parquet(m, compression="zstd")
     seen = lf.select("period", "provider_org_code", "provider_org_name").unique().collect()
-    submission_changes(seen).write_parquet(s, compression="zstd")
+    submission_status(seen, links, orgs).write_parquet(s, compression="zstd")
     return m, s
 
 
@@ -86,4 +110,11 @@ def read_submissions(processed_dir: Path) -> pl.DataFrame:
     path = metrics_dir(processed_dir) / "submissions.parquet"
     if not path.exists():
         raise NoDataError("RTT metrics have not been built yet")
+    return pl.read_parquet(path)
+
+
+def read_organisations(processed_dir: Path) -> pl.DataFrame:
+    path = processed_dir / "ods" / "organisations.parquet"
+    if not path.exists():
+        raise NoDataError("organisation data has not been fetched yet (nda fetch-ods)")
     return pl.read_parquet(path)

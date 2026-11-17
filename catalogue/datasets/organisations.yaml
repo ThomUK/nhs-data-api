@@ -1,0 +1,43 @@
+id: organisations
+title: Organisation reference data (ODS)
+status: draft
+summary: >
+  Organisations that appear in the statistics (NHS trusts, independent sector providers,
+  commissioners), with role, sector, address, operating dates, operator and successor
+  links, from NHS England's Organisation Data Service. Used to follow organisations through
+  mergers and recodes.
+publisher: NHS England (Organisation Data Service)
+source_page: https://digital.nhs.uk/services/organisation-data-service
+licence:
+  name: Open Government Licence v3.0
+  url: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+attribution: "Source: NHS England Organisation Data Service. Contains public sector information licensed under the Open Government Licence v3.0."
+frequency: daily
+geography: England
+coverage_start: null
+grain: [org_code]
+dimensions:
+  - id: org_code
+    label: ODS code
+    description: Organisation code as used in the statistics.
+  - id: sector
+    label: Sector
+    description: Derived from the ODS primary role.
+    codes:
+      nhs_trust: NHS trust (ODS role RO197)
+      independent_sector: Independent sector healthcare provider or site
+      commissioner: Integrated care board, sub-ICB location or NHS England commissioning
+      other: Any other role
+measures: []
+caveats:
+  - id: ods-lineage
+    applies_to: all
+    text: >
+      Successor links come from ODS where recorded (for example North Bristol NHS Trust RVJ
+      to RA7 from 1 July 2026). Changes of operator can issue new codes without a successor
+      record; those links are curated in catalogue/organisation_lineage.yaml with evidence.
+  - id: ods-snapshot
+    applies_to: all
+    text: >
+      Taken from a dated snapshot of the ODS ORD API; names and statuses are as at the
+      snapshot date, not the reporting month.

@@ -138,3 +138,59 @@ def test_same_vintage_months_do_not_overwrite_and_windowed_build_matches(tmp_pat
     direct = compute_all_views(two_months).sort(["view", "period", "org_code",
                                                  "treatment_function_code"])
     assert windowed.equals(direct.select(windowed.columns))
+
+
+def _merger_months():
+    from datetime import date as d
+
+    from nhs_data_api.ods import LineageLink
+    rows = [
+        make_row("A", "Part_2", "C_999", {3: 40}, period="RTT-July-2025"),
+        make_row("B", "Part_2", "C_999", {3: 50}, period="RTT-July-2025"),
+        make_row("A", "Part_2", "C_999", {3: 41}, period="RTT-August-2025"),
+        make_row("B", "Part_2", "C_999", {3: 51}, period="RTT-August-2025"),
+        # A merges into B from September
+        make_row("B", "Part_2", "C_999", {3: 95}, period="RTT-September-2025"),
+    ]
+    links = [LineageLink("A", "B", d(2025, 9, 1), "ods", "test")]
+    return rtt.tidy(rtt.read_full_csv(to_csv(rows))), links
+
+
+def test_lineage_merger_is_not_like_for_like_growth():
+    long, links = _merger_months()
+    m = compute_view(long, "provider", links)
+    b = {r["period"].isoformat(): r for r in m.filter(pl.col("org_code") == "B").to_dicts()}
+    a = {r["period"].isoformat(): r for r in m.filter(pl.col("org_code") == "A").to_dicts()}
+    assert b["2025-09-01"]["waiting_list_change_mom"] == 44           # as published
+    assert b["2025-09-01"]["waiting_list_change_mom_like_for_like"] == 95 - (51 + 41)
+    # Before the merger takes effect, nothing is combined
+    assert b["2025-08-01"]["waiting_list_change_mom_like_for_like"] == 1
+    assert a["2025-08-01"]["waiting_list_change_mom_like_for_like"] == 1
+    lfl = "waiting_list_change_mom_like_for_like"
+    nat = compute_view(long, "national", links).sort("period")[lfl]
+    assert nat.to_list() == [None, 2, 3]  # September: 95 vs 92, merger matched not dropped
+    # Without lineage, A drops out and B's absorbed list counts as growth: 95 - 51 = 44
+    assert compute_view(long, "national").sort("period")[lfl].to_list() == [None, 2, 44]
+
+
+def test_submission_status_reasons():
+    from datetime import date as d
+
+    from nhs_data_api.metrics import submission_status
+    long, links = _merger_months()
+    rows = [make_row(c, "Part_2", "C_999", {1: 5}, period=p) for p, codes in [
+        ("RTT-July-2025", ["A", "B", "RX1", "RHQ"]), ("RTT-August-2025", ["A", "B", "RX1"]),
+        ("RTT-September-2025", ["B"])] for c in codes]
+    seen = rtt.tidy(rtt.read_full_csv(to_csv(rows))).select(
+        "period", "provider_org_code", "provider_org_name")
+    orgs = pl.DataFrame({"org_code": ["A", "B", "RX1", "RHQ"],
+                         "sector": ["nhs_trust"] * 4,
+                         "closed_on": [None, None, None, None]},
+                        schema_overrides={"closed_on": pl.Date})
+    s = submission_status(seen, links, orgs).to_dicts()
+    sep = {x["code"]: x for x in s[2]["new_non_submitters"]}
+    assert sep["A"]["reason"] == "merged_or_recoded" and sep["A"]["successor"] == "B"
+    assert sep["RX1"]["reason"] == "not_submitting"
+    assert [x["code"] for x in s[2]["persistent_non_submitters"]] == ["RHQ"]
+    assert s[2]["persistent_non_submitters"][0]["last_reported"] == d(2025, 7, 1)
+    assert [x["code"] for x in s[1]["new_non_submitters"]] == ["RHQ"]
