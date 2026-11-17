@@ -48,17 +48,20 @@ def _meta(dataset_id: str, measures: list[str] | None = None, **extra) -> dict:
 
 @app.get("/health")
 def health() -> dict:
+    """Service status and version."""
     return {"status": "ok", "version": __version__}
 
 
 @app.get("/v1/datasets")
 def list_datasets() -> dict:
+    """Datasets available, with status, frequency and a short summary."""
     return {"data": [{"id": d.id, "title": d.title, "status": d.status, "frequency": d.frequency,
                       "summary": d.summary.strip()} for d in load_catalogue().values()]}
 
 
 @app.get("/v1/datasets/{dataset_id}")
 def get_dataset(dataset_id: str) -> dict:
+    """Full catalogue entry for one dataset: measures, views, dimensions, codes and caveats."""
     ds = load_catalogue().get(dataset_id)
     if ds is None:
         raise HTTPException(404, f"unknown dataset {dataset_id!r}")
@@ -123,7 +126,8 @@ def rtt_metrics(
 
 @app.get("/v1/rtt/submissions")
 def rtt_submissions() -> dict:
-    """Providers submitting each month, and providers that submitted last month but not this."""
+    """Providers submitting each month; why last month's providers are missing (merged or
+    recoded, closed, not submitted); and NHS trusts that have not submitted for longer."""
     try:
         df = read_submissions(PROCESSED_DIR)
     except NoDataError as exc:

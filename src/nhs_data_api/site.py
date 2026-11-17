@@ -119,18 +119,28 @@ def validation_payload(processed_dir: Path, raw_dir: Path = RAW_DIR) -> dict:
         subs = read_submissions(processed_dir).to_dicts()
     except NoDataError:
         subs = []
-    return {"runs": runs, "submissions": subs, "lineage": lineage_payload(processed_dir, raw_dir)}
+    try:
+        from .revisions import build_revisions
+        revisions = json.loads(build_revisions(processed_dir).read_text())
+    except FileNotFoundError:
+        revisions = {"periods": []}
+    return {"runs": runs, "submissions": subs, "lineage": lineage_payload(processed_dir, raw_dir),
+            "revisions": revisions}
 
 
 def build_site(out_dir: Path | None = None, processed_dir: Path = PROCESSED_DIR,
                raw_dir: Path = RAW_DIR, today: date | None = None) -> list[Path]:
     out_dir = out_dir or SITE_DATA
     today = today or date.today()
+    validation = validation_payload(processed_dir, raw_dir)
     written = [
         _write(out_dir / "calendar.json", calendar_payload(today, raw_dir)),
         _write(out_dir / "measures.json", measures_payload()),
-        _write(out_dir / "validation.json", validation_payload(processed_dir, raw_dir)),
+        _write(out_dir / "validation.json", validation),
     ]
+    if out_dir == SITE_DATA:  # the public docs subsite sits beside the admin site
+        from .docsite import build_docs
+        written += build_docs(processed_dir=processed_dir, validation=validation)
     try:
         metrics = read_rtt_metrics(processed_dir).collect()
     except NoDataError:

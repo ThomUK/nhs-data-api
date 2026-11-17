@@ -85,6 +85,42 @@ function lineage(l) {
   return out;
 }
 
+function revisions(r) {
+  const periods = (r && r.periods) || [];
+  if (!periods.length) return [el("p", { class: "muted", text: "No processed data." })];
+  const compared = periods.filter((p) => p.comparisons.length);
+  const out = [];
+  out.push(el("p", { class: "small muted", text: "Every archived version of a month is kept. Where a month has two or more versions, the changes between them are listed. A month whose earliest archived version is later than its expected first release only has a revision: the original release was never archived, so its changes cannot be measured." }));
+  if (!compared.length) out.push(el("div", { class: "notice info" }, status("neutral", "i", "No comparisons yet"),
+    el("span", { text: " No month has more than one archived version. Comparisons appear when a revised file is archived for a month whose earlier version is held." })));
+  for (const p of compared) {
+    for (const c of p.comparisons) {
+      out.push(el("article", { class: "card", style: "margin-bottom:12px" },
+        el("h3", { text: `${fmtMonth(p.period)}: ${c.old} → ${c.new}` }),
+        el("p", { class: "small muted", style: "margin:4px 0 8px",
+          text: `${nf.format(c.rows_changed)} rows changed, ${nf.format(c.rows_added)} added, ${nf.format(c.rows_removed)} removed of ${nf.format(c.rows_compared)}; ${c.providers_changed} providers with changed measures.` }),
+        c.national_changes.length ? el("div", { class: "table-wrap" }, el("table", {},
+          el("thead", {}, el("tr", {}, el("th", { text: "England measure" }), el("th", { class: "num", text: "Before" }), el("th", { class: "num", text: "After" }), el("th", { class: "num", text: "Change" }))),
+          el("tbody", {}, c.national_changes.map((m) => el("tr", {}, el("td", { text: m.measure.replaceAll("_", " ") }),
+            el("td", { class: "num", text: nf.format(m.old) }), el("td", { class: "num", text: nf.format(m.new) }),
+            el("td", { class: "num", text: `${m.change > 0 ? "+" : ""}${nf.format(m.change)}` }))))))
+          : status("good", "✓", "No change to England measures"),
+        c.top_provider_changes.length ? el("details", { style: "margin-top:8px" }, el("summary", { class: "small", text: "Largest provider waiting-list changes" }),
+          el("div", { class: "table-wrap" }, el("table", {}, el("tbody", {}, c.top_provider_changes.map((t) => el("tr", {},
+            el("td", {}, orgLine(t.org_code, t.org_name)), el("td", { class: "num", text: nf.format(t.old ?? 0) }),
+            el("td", { class: "num", text: nf.format(t.new ?? 0) }), el("td", { class: "num", text: `${t.change > 0 ? "+" : ""}${nf.format(t.change ?? 0)}` }))))))) : null));
+    }
+  }
+  out.push(el("div", { class: "table-wrap card", style: "padding:0;margin-top:12px" }, el("table", {},
+    el("thead", {}, el("tr", {}, el("th", { text: "Month" }), el("th", { text: "Archived versions" }), el("th", { text: "Expected first release" }), el("th", { text: "Status" }))),
+    el("tbody", {}, [...periods].reverse().map((p) => el("tr", {},
+      el("td", { text: fmtMonth(p.period) }), el("td", { class: "small", text: p.vintages.join(", ") }),
+      el("td", { class: "small", text: p.expected_first_release }),
+      el("td", {}, p.original_archived ? (p.comparisons.length ? status("good", "✓", `${p.comparisons.length} revision${p.comparisons.length > 1 ? "s" : ""} compared`) : status("good", "✓", "Original release archived"))
+        : status("warning", "!", "Revision only: original not archived"))))))));
+  return out;
+}
+
 getJSON("data/validation.json").then((v) => {
   const out = [el("h2", { style: "margin-top:8px", text: "Reconciliation runs" })];
   if (v.runs.length) out.push(...[...v.runs].reverse().map(runCard));
@@ -92,6 +128,7 @@ getJSON("data/validation.json").then((v) => {
   out.push(el("h2", { text: "Submissions" }),
     el("p", { class: "small muted", text: "Reasons use ODS successor records and curated lineage links. NHS trusts still not submitting: trusts (ODS role RO197) that reported in an earlier loaded month, are missing for at least two months, are not closed and are not carried by a submitting successor." }),
     submissions(v.submissions),
-    el("h2", { text: "Organisation lineage" }), ...lineage(v.lineage));
+    el("h2", { text: "Organisation lineage" }), ...lineage(v.lineage),
+    el("h2", { text: "Revisions" }), ...revisions(v.revisions));
   content.replaceChildren(...out);
 }).catch((e) => showError(content, e));

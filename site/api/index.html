@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>NHS Data API</title>
+<meta name="description" content="Documentation for an API serving public NHS England statistics with definitions, sources and caveats.">
+<link rel="stylesheet" href="assets/docs.css"></head><body>
+<header class="top"><div class="brand">NHS Data API<small>docs · working title</small></div>
+<nav aria-label="Documentation"><a href="index.html" aria-current=page>Overview</a><a href="reference.html">Endpoints</a><a href="datasets.html">Datasets &amp; measures</a><a href="llms.txt">llms.txt</a></nav></header>
+<main>
+<h1>NHS Data API</h1>
+<p class=lede>Public NHS England performance statistics through a modern JSON API, designed
+for human programmers and AI agents alike. Every number comes back with its definition, the
+publication it came from, its licence, and the caveats that apply.</p>
+<div class=note><strong>Reconciled with NHS England.</strong> For September 2026, all 4,004 provider × specialty rows match NHS England's published provider figures (waiting list, waits over 18/52/65/78 weeks, median and 92nd percentile). Reconciliation runs every month before release.</div>
+<h2>Principles</h2>
+<ul>
+<li><strong>Citable.</strong> Each response's <code>meta</code> block names the dataset,
+source page, licence and attribution, and defines every measure returned.</li>
+<li><strong>Honest about the data.</strong> Known problems (missed submissions, mergers,
+recodes, revisions) are returned as caveats rather than hidden. Missing data is never a
+zero.</li>
+<li><strong>Matches the publisher.</strong> Measures reproduce NHS England's published
+figures exactly, on NHS England's basis.</li>
+<li><strong>Open data only.</strong> Every dataset is published under the Open Government
+Licence; reuse is permitted with attribution.</li>
+</ul>
+<h2>Quick start</h2>
+<div class=note>The API is not yet publicly deployed. Examples use <code>https://&lt;api-host&gt;</code> as
+a placeholder for the host.</div>
+<p>England's waiting list, % within 18 weeks and median wait since July 2026:</p>
+<pre><code class="shell">curl &quot;https://&lt;api-host&gt;/v1/rtt/metrics?view=national&amp;measures=waiting_list_total,pct_within_18_weeks,median_wait_weeks&amp;period_from=2026-07-01&quot;</code></pre>
+<p>One trust (Guy's and St Thomas', ODS code <code>RJ1</code>), latest month:</p>
+<pre><code class="shell">curl &quot;https://&lt;api-host&gt;/v1/rtt/metrics?view=provider&amp;org=RJ1&quot;</code></pre>
+<p>Find an organisation's code:</p>
+<pre><code class="shell">curl &quot;https://&lt;api-host&gt;/v1/organisations?q=bristol&quot;</code></pre>
+<h2>Concepts</h2>
+<h3>Views</h3>
+<p>Waiting-list data can be grouped by who treats patients or by where they live:</p>
+<ul><li><code>national</code>: England</li><li><code>provider</code>: Provider</li><li><code>provider_icb</code>: Provider&#x27;s ICB</li><li><code>population_icb</code>: Population (ICB)</li><li><code>population_sub_icb</code>: Population (sub-ICB location)</li></ul>
+<p>Population views answer "how long are this area's residents waiting, wherever they are
+treated?".</p>
+<h3>Responses</h3>
+<pre><code class="json">{
+  &quot;data&quot;: [ { &quot;period&quot;: &quot;2026-09-01&quot;, &quot;org_code&quot;: &quot;RJ1&quot;, &quot;waiting_list_total&quot;: 107635, ... } ],
+  &quot;meta&quot;: {
+    &quot;dataset&quot;: &quot;rtt&quot;,
+    &quot;source_page&quot;: &quot;https://www.england.nhs.uk/statistics/...&quot;,
+    &quot;licence&quot;: &quot;Open Government Licence v3.0&quot;,
+    &quot;attribution&quot;: &quot;Source: NHS England, ...&quot;,
+    &quot;caveats&quot;: [ { &quot;id&quot;: &quot;rtt-no-estimates&quot;, &quot;text&quot;: &quot;...&quot; } ],
+    &quot;measures&quot;: { &quot;waiting_list_total&quot;: { &quot;label&quot;: &quot;...&quot;, &quot;unit&quot;: &quot;count&quot;, &quot;definition&quot;: &quot;...&quot; } }
+  }
+}</code></pre>
+<p>Periods are ISO dates for the first day of the month. Organisations use ODS codes.
+Measure ids are stable; see <a href=datasets.html>Datasets &amp; measures</a>.</p>
+<h3>Revisions and missing data</h3>
+<p>NHS England revises earlier months. The API serves the latest version of each month and
+keeps every version. A provider that did not submit has no row for that month (never a
+zero); <code>/v1/rtt/submissions</code> lists who did not submit and why (merged or recoded,
+closed, or missing).</p>
+<h3>Like-for-like changes</h3>
+<p>Month-on-month changes come in two forms: the simple difference of published totals, and
+a like-for-like version that only compares providers present in both months, following
+mergers and recodes. In September 2026 the published waiting list fell by 83,840, but the
+like-for-like change was a rise of about 5,500: Nottingham University Hospitals did not
+submit.</p>
+<h2>For AI agents</h2>
+<p>A plain-text summary for language models is at <a href=llms.txt>llms.txt</a>. The full
+spec is <a href=openapi.json>openapi.json</a>. Agents should quote <code>meta.attribution</code>
+when citing figures and pass on any <code>meta.caveats</code>. An MCP server exposing the
+same endpoints as task-shaped tools is planned.</p>
+<h2>Licence</h2>
+<p>Data: NHS England, Open Government Licence v3.0. Attribution is required; use the
+<code>meta.attribution</code> text. This service is independent and is not provided by the
+NHS.</p></main>
+<footer>Generated 17 November 2026 · v0.1.0 · Contains public sector
+information licensed under the Open Government Licence v3.0.</footer>
+</body></html>

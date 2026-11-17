@@ -1,0 +1,449 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "NHS Data API (working title)",
+    "description": "Public NHS England statistics with definitions, sources and caveats attached. Every response includes a `meta` block citing the source publication and licence, and defining each measure returned.",
+    "version": "0.1.0"
+  },
+  "paths": {
+    "/health": {
+      "get": {
+        "summary": "Health",
+        "description": "Service status and version.",
+        "operationId": "health_health_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Health Health Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/datasets": {
+      "get": {
+        "summary": "List Datasets",
+        "description": "Datasets available, with status, frequency and a short summary.",
+        "operationId": "list_datasets_v1_datasets_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response List Datasets V1 Datasets Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/datasets/{dataset_id}": {
+      "get": {
+        "summary": "Get Dataset",
+        "description": "Full catalogue entry for one dataset: measures, views, dimensions, codes and caveats.",
+        "operationId": "get_dataset_v1_datasets__dataset_id__get",
+        "parameters": [
+          {
+            "name": "dataset_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Dataset Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Dataset V1 Datasets  Dataset Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/rtt/metrics": {
+      "get": {
+        "summary": "Rtt Metrics",
+        "description": "RTT v1 measures for one view, filtered by organisation, period and specialty.",
+        "operationId": "rtt_metrics_v1_rtt_metrics_get",
+        "parameters": [
+          {
+            "name": "view",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "enum": [
+                "national",
+                "provider",
+                "provider_icb",
+                "population_icb",
+                "population_sub_icb"
+              ],
+              "type": "string",
+              "description": "provider / provider_icb: where patients are treated. population_icb / population_sub_icb: where patients' care is commissioned (residents, wherever treated). national: England.",
+              "default": "provider",
+              "title": "View"
+            },
+            "description": "provider / provider_icb: where patients are treated. population_icb / population_sub_icb: where patients' care is commissioned (residents, wherever treated). national: England."
+          },
+          {
+            "name": "org",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "ODS code within the view, e.g. RJ1 or QKK",
+              "title": "Org"
+            },
+            "description": "ODS code within the view, e.g. RJ1 or QKK"
+          },
+          {
+            "name": "period",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Month as YYYY-MM-01; default latest",
+              "title": "Period"
+            },
+            "description": "Month as YYYY-MM-01; default latest"
+          },
+          {
+            "name": "period_from",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Start of a range (inclusive)",
+              "title": "Period From"
+            },
+            "description": "Start of a range (inclusive)"
+          },
+          {
+            "name": "treatment_function",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Treatment function code; C_999 = all",
+              "default": "C_999",
+              "title": "Treatment Function"
+            },
+            "description": "Treatment function code; C_999 = all"
+          },
+          {
+            "name": "measures",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Comma-separated measure ids; default all",
+              "title": "Measures"
+            },
+            "description": "Comma-separated measure ids; default all"
+          },
+          {
+            "name": "include_experimental",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "description": "Include experimental measures",
+              "default": false,
+              "title": "Include Experimental"
+            },
+            "description": "Include experimental measures"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Rtt Metrics V1 Rtt Metrics Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/rtt/submissions": {
+      "get": {
+        "summary": "Rtt Submissions",
+        "description": "Providers submitting each month; why last month's providers are missing (merged or\nrecoded, closed, not submitted); and NHS trusts that have not submitted for longer.",
+        "operationId": "rtt_submissions_v1_rtt_submissions_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Rtt Submissions V1 Rtt Submissions Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/organisations": {
+      "get": {
+        "summary": "List Organisations",
+        "description": "Organisations that appear in the statistics, from the ODS snapshot.",
+        "operationId": "list_organisations_v1_organisations_get",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Search name or ODS code, e.g. 'bristol' or 'RA7'",
+              "title": "Q"
+            },
+            "description": "Search name or ODS code, e.g. 'bristol' or 'RA7'"
+          },
+          {
+            "name": "sector",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "enum": [
+                    "nhs_trust",
+                    "independent_sector",
+                    "commissioner",
+                    "other"
+                  ],
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Sector"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 500,
+              "minimum": 1,
+              "default": 50,
+              "title": "Limit"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response List Organisations V1 Organisations Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/organisations/{org_code}": {
+      "get": {
+        "summary": "Get Organisation",
+        "description": "One organisation, with ODS successor/predecessor links and curated lineage links.",
+        "operationId": "get_organisation_v1_organisations__org_code__get",
+        "parameters": [
+          {
+            "name": "org_code",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Org Code"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true,
+                  "title": "Response Get Organisation V1 Organisations  Org Code  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "type": "array",
+            "title": "Detail"
+          }
+        },
+        "type": "object",
+        "title": "HTTPValidationError"
+      },
+      "ValidationError": {
+        "properties": {
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "type": "array",
+            "title": "Location"
+          },
+          "msg": {
+            "type": "string",
+            "title": "Message"
+          },
+          "type": {
+            "type": "string",
+            "title": "Error Type"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "ctx": {
+            "type": "object",
+            "title": "Context"
+          }
+        },
+        "type": "object",
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError"
+      }
+    }
+  }
+}

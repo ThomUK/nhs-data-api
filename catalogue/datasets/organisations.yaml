@@ -35,7 +35,8 @@ caveats:
     text: >
       Successor links come from ODS where recorded (for example North Bristol NHS Trust RVJ
       to RA7 from 1 July 2026). Changes of operator can issue new codes without a successor
-      record; those links are curated in catalogue/organisation_lineage.yaml with evidence.
+      record; those links are curated manually with evidence and shown in /v1/organisations/{code}
+      as curated_lineage.
   - id: ods-snapshot
     applies_to: all
     text: >

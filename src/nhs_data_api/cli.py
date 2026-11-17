@@ -30,6 +30,8 @@ def main(argv: list[str] | None = None) -> None:
     ap = sub.add_parser("archive-push", help="update the manifest and push the raw archive")
     ap.add_argument("-m", "--message", default="Archive update")
     sub.add_parser("archive-verify", help="check archived files against the manifest")
+    sub.add_parser("diff-vintages", help="compare archived versions of the same month")
+    sub.add_parser("build-docs", help="generate the API documentation subsite (site/api)")
     arc = sub.add_parser("archive", help="copy a manually downloaded file into the raw archive")
     arc.add_argument("files", nargs="+")
     arc.add_argument("--dataset", required=True)
@@ -65,6 +67,23 @@ def main(argv: list[str] | None = None) -> None:
         out = rtt.write_vintage(df, PROCESSED_DIR / "rtt", args.vintage)
         print(f"wrote {df.height:,} rows to {out}")
         print("metrics: " + ", ".join(str(p) for p in build_rtt_metrics(PROCESSED_DIR)))
+    elif args.cmd == "build-docs":
+        from .docsite import build_docs
+        for path in build_docs():
+            print(f"wrote {path}")
+    elif args.cmd == "diff-vintages":
+        from .revisions import build_revisions
+        out = build_revisions(PROCESSED_DIR)
+        report = json.loads(out.read_text())
+        for p in report["periods"]:
+            note = "" if p["original_archived"] else (
+                f"  (original release {p['expected_first_release']} not archived)")
+            print(f"{p['period'][:7]}: versions {', '.join(p['vintages'])}{note}")
+            for c in p["comparisons"]:
+                print(f"    {c['old']} -> {c['new']}: rows changed {c['rows_changed']}, "
+                      f"added {c['rows_added']}, removed {c['rows_removed']}, "
+                      f"providers changed {c['providers_changed']}")
+        print(f"report: {out}")
     elif args.cmd == "archive-push":
         from . import archive
         print(archive.push(RAW_DIR, args.message))

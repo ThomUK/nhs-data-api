@@ -251,7 +251,7 @@ measures:
       Change in waiting_list_total counting only providers that submitted in both months.
     caveat: >
       Follows organisation lineage: a provider merged or recoded into another (ODS successor
-      records and confirmed links in catalogue/organisation_lineage.yaml) counts as the same
+      records and manually confirmed links, see /v1/organisations) counts as the same
       provider across the change. For example North Bristol (RVJ) merged into RA7 in July
       2026: RA7's simple change is +44,327 but its like-for-like change is +2,296. Unlinked
       recodes still appear as one provider stopping and another starting.

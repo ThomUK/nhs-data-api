@@ -1,0 +1,88 @@
+# NHS Data API (working title)
+
+> Public NHS England statistics as JSON, with every figure's definition, source,
+> licence (Open Government Licence v3.0) and caveats in the response `meta`.
+
+Not yet publicly deployed; examples use https://<api-host>.
+
+## Rules for using this data
+
+- Quote `meta.attribution` when citing figures.
+- Pass on `meta.caveats`; a missing row means no submission, never zero.
+- Recompute ratios and percentiles from components; never average them.
+- Use like-for-like measures for month-on-month change; simple changes are distorted by missed submissions and mergers.
+- Periods are first-of-month ISO dates; organisations are ODS codes (find them with /v1/organisations?q=).
+
+## Endpoints
+
+- GET /v1/datasets: Datasets available, with status, frequency and a short summary.
+- GET /v1/datasets/{dataset_id} (dataset_id): Full catalogue entry for one dataset: measures, views, dimensions, codes and caveats.
+- GET /v1/rtt/metrics (view, org, period, period_from, treatment_function, measures, include_experimental): RTT v1 measures for one view, filtered by organisation, period and specialty.
+- GET /v1/rtt/submissions: Providers submitting each month; why last month's providers are missing (merged or
+- GET /v1/organisations (q, sector, limit): Organisations that appear in the statistics, from the ODS snapshot.
+- GET /v1/organisations/{org_code} (org_code): One organisation, with ODS successor/predecessor links and curated lineage links.
+
+## Dataset `organisations`: Organisation reference data (ODS) (draft)
+
+Organisations that appear in the statistics (NHS trusts, independent sector providers, commissioners), with role, sector, address, operating dates, operator and successor links, from NHS England's Organisation Data Service. Used to follow organisations through mergers and recodes.
+
+Caveats:
+- Successor links come from ODS where recorded (for example North Bristol NHS Trust RVJ to RA7 from 1 July 2026). Changes of operator can issue new codes without a successor record; those links are curated manually with evidence and shown in /v1/organisations/{code} as curated_lineage.
+- Taken from a dated snapshot of the ODS ORD API; names and statuses are as at the snapshot date, not the reporting month.
+
+## Dataset `rtt`: Consultant-led Referral to Treatment (RTT) Waiting Times (draft)
+
+Monthly counts of patients on consultant-led elective care pathways in England, by provider, commissioner and treatment function, split into weekly waiting-time bands. Covers the open waiting list (incomplete pathways), completed pathways and new clock starts.
+
+Views: `national` England; `provider` Provider; `provider_icb` Provider's ICB; `population_icb` Population (ICB); `population_sub_icb` Population (sub-ICB location)
+
+Measures:
+- `waiting_list_total` (count): Patients waiting to start treatment at month end. Sum of Part_2 across all weekly bands.
+- `waiting_list_dta` (count): Incomplete pathways where a decision to admit for treatment has been made (Part_2A).
+- `pct_waiting_list_dta` (percent): waiting_list_dta / waiting_list_total x 100.
+- `pct_within_18_weeks` (percent): Part_2 patients in bands with weeks_upper <= 18, divided by waiting_list_total, x 100.
+- `waiting_over_18_weeks` (count): Part_2 patients in bands with weeks_lower >= 18.
+- `waiting_over_52_weeks` (count): Part_2 patients in bands with weeks_lower >= 52.
+- `waiting_over_65_weeks` (count): Part_2 patients in bands with weeks_lower >= 65.
+- `waiting_over_78_weeks` (count): Part_2 patients in bands with weeks_lower >= 78.
+- `waiting_over_104_weeks` (count): Part_2 patients in the open-ended top band (more than 104 weeks).
+- `median_wait_weeks` (weeks): 50th percentile of the Part_2 waiting-time distribution, by linear interpolation within the weekly band containing the median patient. Same method as NHS England (matched exactly for all providers and specialties, September 2026). Rounded to 1 decimal place.
+- `p92_wait_weeks` (weeks): 92nd percentile of the Part_2 waiting-time distribution, interpolated as for the median. If it falls in the open-ended top band, the band's lower bound (104) is returned. Same method as NHS England (matched exactly, September 2026). Rounded to 1 decimal place.
+- `approaching_52_weeks` (count): Part_2 patients waiting more than 40 and up to 52 weeks. Will exceed 52 weeks within 12 weeks unless treated or removed.
+- `clock_starts` (count): Pathways starting in the month (Part_3). Published as a total with no waiting-time split.
+- `clock_stops_admitted` (count): Pathways ending with admission for treatment in the month (Part_1A), including unknown clock start.
+- `clock_stops_non_admitted` (count): Pathways ending in the month without admission (Part_1B), including unknown clock start.
+- `clock_stops_total` (count): clock_stops_admitted + clock_stops_non_admitted.
+- `pct_completed_within_18_weeks_admitted` (percent): Part_1A patients in bands with weeks_upper <= 18, divided by Part_1A with a known clock start, x 100.
+- `pct_completed_within_18_weeks_non_admitted` (percent): As above for Part_1B.
+- `median_wait_completed_admitted_weeks` (weeks): Median of the Part_1A distribution (known clock starts), interpolated within weekly bands.
+- `median_wait_completed_non_admitted_weeks` (weeks): Median of the Part_1B distribution (known clock starts), interpolated within weekly bands.
+- `waiting_list_change_mom` (count): waiting_list_total minus the previous month's, as published. Null if the previous month is not loaded or the organisation/specialty does not appear in it.
+- `waiting_over_52_weeks_change_mom` (count): waiting_over_52_weeks minus the previous month's, as published.
+- `waiting_list_change_mom_like_for_like` (count): Change in waiting_list_total counting only providers that submitted in both months.
+- `waiting_over_52_weeks_change_mom_like_for_like` (count): Change in waiting_over_52_weeks counting only providers that submitted in both months.
+- `unreported_removals` (count): Previous month's waiting list + clock_starts - clock_stops_total - this month's waiting list, from published totals. Matches NHS England's "Derived unreported completed pathways and removals" (without estimates).
+- `unreported_removals_like_for_like` (count, experimental): Previous month's waiting list + clock_starts - clock_stops_total - this month's waiting list, counting only providers that submitted in both months. A positive value means the list fell by more than recorded treatment explains.
+- `providers_submitting` (count): Number of providers with any rows in the group for the month.
+- `new_non_submitters` (list of organisations): Providers that appear in the previous month but not this month (from /v1/rtt/submissions). Usually indicates a missed submission, a merger or a closure; check ODS before assuming missing data.
+
+Caveats:
+- All measures exclude patients commissioned outside England (commissioner code NONC: Wales, Scotland, Northern Ireland, overseas), matching NHS England's published figures. In September 2026 this was 30,641 waiting-list pathways, weighted towards long waits.
+- Figures are sums of submitted data and do not include NHS England's estimates for providers that did not submit. National headline figures in NHS England's press notice do include estimates, so they can be higher (7.38m vs 7.07m waiting, September 2026). Medians and 92nd percentiles in the press notice exclude estimates and match ours.
+- new_non_submitters only detects providers that stopped submitting since the previous month. Providers missing for longer are listed in NHS England's press notice and will be detected once ODS reference data defines the expected set of providers.
+- Independent sector providers appear as providers in their own right. Totals by NHS trust exclude NHS-funded activity delivered by independent providers unless they are included explicitly.
+- Figures can be revised in later publications. This API keeps every vintage; the default view returns the latest revised figure. Use the as_published view for the figure as first released.
+- Some organisations do not submit for some months (for example after an electronic patient record go-live). Missing data are not zeros; national totals in the source may include estimates for non-submitters. Organisation-month caveats are listed here as they are identified.
+
+## Dataset `wlmds`: Waiting List Minimum Data Set (WLMDS) (draft)
+
+Weekly patient-level collection of elective waiting lists, published as aggregate statistics alongside the monthly RTT data. Gives a more timely view of the waiting list.
+
+Caveats:
+- WLMDS is a different collection from monthly RTT and its figures will not match RTT exactly (coverage, timing and definitions differ). Do not mix the two in one series.
+
+## Docs
+
+- Endpoints: reference.html
+- OpenAPI: openapi.json
+- Datasets & measures: datasets.html

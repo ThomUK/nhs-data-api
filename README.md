@@ -63,10 +63,18 @@ uv run nda build-site
 
 After adding files each month: `uv run nda archive-push -m "RTT October 2026"`.
 
+## API documentation
+
+Generated into [`site/api/`](site/api/index.html) by `uv run nda build-docs` (also run by
+`nda build-site`): overview, endpoint reference from the OpenAPI spec with real example
+responses, dataset and measure pages from the catalogue, `openapi.json` and `llms.txt`.
+It is self-contained so it can be hosted publicly on its own.
+
 ## Admin site
 
 A static admin site in [`site/`](site/README.md) (GitHub Pages): publication calendar with the
-files to collect on each date, RTT time series with anomaly flags, and validation results.
+files to collect on each date, RTT time series with anomaly flags, and validation results
+(reconciliation, submissions, organisation lineage and revisions; `nda diff-vintages`).
 Rebuild its data with `uv run nda build-site`.
 
 ## API (first slice)

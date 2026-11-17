@@ -57,7 +57,8 @@ export function status(kind, icon, label) {
 }
 
 export function renderChrome(active) {
-  const pages = [["index.html", "Calendar"], ["timeseries.html", "Time series"], ["validation.html", "Validation"]];
+  const pages = [["index.html", "Calendar"], ["timeseries.html", "Time series"], ["validation.html", "Validation"],
+    ["api/index.html", "API docs"]];
   const bar = el("header", { class: "topbar" },
     el("div", { class: "brand" }, "NHS Data API", el("small", { text: "admin" })),
     el("nav", { "aria-label": "Admin pages" },
