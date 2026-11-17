@@ -39,7 +39,7 @@ function datasetBlock(pub, today) {
     el("td", {}, fileStatus(f, pub, today),
       f.received.map((name) => el("div", { class: "filename", text: name })))));
   const extra = pub.unmatched_files.length
-    ? el("p", { class: "small", style: "margin:8px 0 0" }, status("warning", "?", "Unrecognised files in archive: "),
+    ? el("p", { class: "small", style: "margin:8px 0 0" }, status("neutral", "i", "Other files in this release (e.g. revised earlier months): "),
       pub.unmatched_files.map((n) => el("span", { class: "filename", text: ` ${n}` })))
     : null;
   return el("div", {}, head,

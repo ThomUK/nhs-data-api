@@ -52,7 +52,7 @@ function setNotices(data) {
   const out = [];
   if (data.periods.length < 6) {
     out.push(el("div", { class: "notice info" }, status("neutral", "i", "Short history"),
-      el("span", { text: ` Only ${data.periods.length} month${data.periods.length === 1 ? "" : "s"} loaded (${data.periods.map(fmtMonth).join(", ")}). Outlier rules need 6+ months; month-on-month measures start from the second month.` })));
+      el("span", { text: ` Only ${data.periods.length} month${data.periods.length === 1 ? "" : "s"} loaded (${data.periods.map(fmtMonth).join(", ")}). The unusual-change rule needs 8+ months; month-on-month measures start from the second month.` })));
   }
   if (f.view.value !== "national") {
     out.push(el("p", { class: "small muted", style: "margin:0 0 12px",
@@ -77,7 +77,7 @@ async function renderOrg() {
     const cards = [];
     for (const id of ids.filter((i) => visible.has(i) && s[i])) {
       const m = byId[id], values = s[id];
-      const flags = detectAnomalies(values, m.unit, thresholds());
+      const flags = detectAnomalies(values, m.unit, thresholds(), { isChange: !!m.requires_previous_month });
       flaggedCount += flags.filter((x) => x.length).length;
       const last = values.length - 1;
       const prev = last > 0 ? values[last - 1] : null;
@@ -106,7 +106,7 @@ async function renderScan() {
   const rows = data.orgs.map((o) => {
     const values = o.series[tf]?.[m.id];
     if (!values) return null;
-    const flags = detectAnomalies(values, m.unit, thresholds());
+    const flags = detectAnomalies(values, m.unit, thresholds(), { isChange: !!m.requires_previous_month });
     const cur = values[last], prev = last > 0 ? values[last - 1] : null;
     let change = null, sortKey = -1;
     if (cur !== null && prev !== null) {

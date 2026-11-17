@@ -183,8 +183,36 @@ def _band_label(lower: int, upper: int | None) -> str:
     return f"gt{lower:03d}" if upper is None else f"gt{lower:03d}_le{upper:03d}"
 
 
+def infer_vintage(source: Path) -> tuple[date, date]:
+    """Infer the publication date of a Full CSV zip from the timestamp of the file inside.
+
+    NHS England publishes on the second Thursday of the month and builds the file a few days
+    before, so the publication is the first second-Thursday on or after the file's date. This
+    also places revised files at the release they were republished with, not their original
+    release. Returns (inferred publication date, file timestamp date).
+    """
+    from ..schedule import add_months, nth_weekday
+
+    with zipfile.ZipFile(source) as zf:
+        stamp = date(*zf.infolist()[0].date_time[:3])
+    for offset in (0, 1):
+        month = add_months(stamp, offset)
+        candidate = nth_weekday(month.year, month.month, 3, 2)
+        if candidate >= stamp:
+            return candidate, stamp
+    raise AssertionError("unreachable")
+
+
 def write_vintage(df: pl.DataFrame, out_dir: Path, vintage: str) -> Path:
-    target = out_dir / f"vintage={vintage}" / "part-0.parquet"
+    """Write one reporting month as published at `vintage`.
+
+    One file per (vintage, period): a single publication can carry several months (for
+    example revised files republished together), and they must not overwrite each other.
+    """
+    periods = df["period"].unique().to_list()
+    if len(periods) != 1:
+        raise RttFormatError(f"expected one period per file, found {periods}")
+    target = out_dir / f"vintage={vintage}" / f"period-{periods[0]:%Y-%m}.parquet"
     target.parent.mkdir(parents=True, exist_ok=True)
     df.sort(["period", "provider_org_code", "rtt_part_type", "treatment_function_code",
              "commissioner_org_code", "weeks_lower"]).write_parquet(target, compression="zstd")

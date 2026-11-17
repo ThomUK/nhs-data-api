@@ -74,3 +74,16 @@ def test_zip_input(tmp_path):
     with zipfile.ZipFile(z, "w") as zf:
         zf.writestr("data.csv", to_csv([make_row("RJ1", "Part_2", "C_999", {0: 1})]))
     assert rtt.read_full_csv(z).height == 1
+
+
+@pytest.mark.parametrize("stamp, expected", [
+    ((2026, 1, 22, 0, 0, 0), date(2026, 2, 12)),   # revised file -> next release
+    ((2025, 12, 3, 0, 0, 0), date(2025, 12, 11)),  # normal: same month
+    ((2026, 3, 12, 0, 0, 0), date(2026, 3, 12)),   # built on release day
+    ((2026, 3, 13, 0, 0, 0), date(2026, 4, 9)),    # just after a release
+])
+def test_infer_vintage(tmp_path, stamp, expected):
+    z = tmp_path / "f.zip"
+    with zipfile.ZipFile(z, "w") as zf:
+        zf.writestr(zipfile.ZipInfo("x.csv", date_time=stamp), "a")
+    assert rtt.infer_vintage(z)[0] == expected

@@ -39,9 +39,11 @@
       <li><strong>Missing month:</strong> no value, although earlier and later months have values (often a missed submission).</li>
       <li><strong>No data this month:</strong> the latest month has no value but earlier months do (a missed submission, merger, recoding or closure).</li>
       <li><strong>Jump:</strong> change on the previous month of at least the threshold, as a percentage for counts
-        (ignored below 20) or in points/weeks for percentages and waits.</li>
-      <li><strong>Outlier:</strong> with at least 6 earlier months, more than 3.5 robust standard deviations
-        (scaled median absolute deviation) from the median of the previous 12 months.</li>
+        (ignored below 20) or in points/weeks for percentages and waits. Not applied to month-on-month change
+        measures, which cross zero.</li>
+      <li><strong>Unusual change:</strong> with at least 6 earlier month-on-month changes, this month's change is
+        more than 3.5 robust standard deviations (scaled median absolute deviation) from the median change of the
+        previous 12 months. A step change is flagged in the month it happens, not every month after.</li>
     </ul>
   </main>
   <script type="module" src="assets/timeseries.js"></script>

@@ -122,3 +122,19 @@ def test_metric_columns_match_catalogue(two_months):
     computed = {x.id for x in load_catalogue()["rtt"].measures if x.computed}
     assert computed == set(m.columns) - {"view", "period", "org_code", "org_name",
                                          "treatment_function_code"}
+
+
+def test_same_vintage_months_do_not_overwrite_and_windowed_build_matches(tmp_path, two_months):
+    from nhs_data_api.store import build_rtt_metrics, latest_rtt, read_rtt_metrics
+
+    # Both months republished in one release (as revised files are)
+    for period in two_months["period"].unique():
+        rtt.write_vintage(two_months.filter(pl.col("period") == period), tmp_path / "rtt",
+                          "2026-02-12")
+    assert latest_rtt(tmp_path)["period"].n_unique() == 2
+    build_rtt_metrics(tmp_path)
+    windowed = read_rtt_metrics(tmp_path).collect().sort(["view", "period", "org_code",
+                                                          "treatment_function_code"])
+    direct = compute_all_views(two_months).sort(["view", "period", "org_code",
+                                                 "treatment_function_code"])
+    assert windowed.equals(direct.select(windowed.columns))

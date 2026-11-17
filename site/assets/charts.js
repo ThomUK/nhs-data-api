@@ -11,8 +11,11 @@ const svg = (tag, attrs = {}) => {
 // ---- Anomaly rules (documented on the page) ----
 // gap:    value missing while earlier and later months have values
 // jump:   month-on-month change above threshold (relative for counts, points for %/weeks)
-// robust: with >= 6 earlier points, |x - median(last 12)| > 3.5 x scaled MAD
-export function detectAnomalies(values, unit, threshold) {
+// robust: with >= 6 earlier monthly changes, this month's change is more than 3.5 scaled
+//         MADs from the median change of the previous 12 months
+// Measures that are themselves month-on-month differences (requires_previous_month) cross
+// zero, so a percentage "jump" is meaningless for them: only the unusual-change rule applies.
+export function detectAnomalies(values, unit, threshold, { isChange = false } = {}) {
   const flags = values.map(() => []);
   const firstIdx = values.findIndex((v) => v !== null);
   let lastIdx = -1;
@@ -25,7 +28,7 @@ export function detectAnomalies(values, unit, threshold) {
       continue;
     }
     const prev = i > 0 ? values[i - 1] : null;
-    if (prev !== null && prev !== undefined) {
+    if (prev !== null && prev !== undefined && !isChange) {
       if (unit === "percent" || unit === "weeks") {
         if (Math.abs(v - prev) >= threshold.abs) flags[i].push(`Change of ${(v - prev).toFixed(1)} ${unit === "percent" ? "pts" : "wks"}`);
       } else if (Math.abs(prev) >= 20) {
@@ -33,11 +36,18 @@ export function detectAnomalies(values, unit, threshold) {
         if (Math.abs(rel) >= threshold.rel / 100) flags[i].push(`Change of ${(rel * 100).toFixed(0)}% on previous month`);
       }
     }
-    const hist = values.slice(Math.max(0, i - 12), i).filter((x) => x !== null);
-    if (hist.length >= 6) {
-      const med = median(hist);
-      const mad = median(hist.map((x) => Math.abs(x - med))) * 1.4826;
-      if (mad > 0 && Math.abs(v - med) / mad > 3.5) flags[i].push("Outlier against previous 12 months");
+    // Robust outlier on month-on-month changes, so a genuine step change flags once rather
+    // than every month after it.
+    if (prev !== null && prev !== undefined) {
+      const diffs = [];
+      for (let j = Math.max(1, i - 12); j < i; j++) {
+        if (values[j] !== null && values[j - 1] !== null) diffs.push(values[j] - values[j - 1]);
+      }
+      if (diffs.length >= 6) {
+        const med = median(diffs);
+        const mad = median(diffs.map((x) => Math.abs(x - med))) * 1.4826;
+        if (mad > 0 && Math.abs(v - prev - med) / mad > 3.5) flags[i].push("Unusual change against the previous 12 months");
+      }
     }
   }
   return flags;
@@ -61,7 +71,11 @@ function niceTicks(min, max, count = 4) {
 }
 // Tick labels with just enough decimals to tell adjacent ticks apart.
 function tickFormatter(step, maxAbs, unit) {
-  const decimalsFor = (s) => Math.max(0, Math.ceil(-Math.log10(s) - 1e-9));
+  const decimalsFor = (s) => {
+    let d = 0;
+    while (d < 4 && Math.abs(Math.round(s * 10 ** d) - s * 10 ** d) > 1e-6) d++;
+    return d;
+  };
   if (unit === "percent" || unit === "weeks") {
     const d = decimalsFor(step);
     return (v) => `${v.toFixed(d)}${unit === "percent" ? "%" : ""}`;
