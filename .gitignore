@@ -4,5 +4,5 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 # Local data lake: raw archive and processed Parquet never go in git.
-data/
-!data/.gitkeep
+/data/
+!/data/.gitkeep
