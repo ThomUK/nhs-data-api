@@ -4,7 +4,8 @@ Public NHS England performance statistics served from modern API endpoints, buil
 equally useful to AI agents and human programmers. Every number comes back with its
 definition, source publication, licence and known caveats.
 
-**Status:** early spike. RTT parsing and a minimal API work against synthetic data.
+**Status:** early spike. RTT parsing and a minimal API work against the real Aug and Sep 2026
+RTT files.
 
 ## Principles
 
@@ -43,9 +44,8 @@ uv run uvicorn nhs_data_api.api.app:app --reload   # then open /docs
 
 ## Next steps
 
-1. Download one real RTT "Full CSV data file" in a browser and run `nda ingest-rtt` on it.
-   Check the column names match `ingest/rtt.py` (the test fixture is synthetic), then check
-   the derived measures against NHS England's published headline figures.
+1. Check the derived national measures against NHS England's published headline figures
+   (see `docs/validation/rtt-2026-09.md`).
 2. Contact the NHS England statistics team about a supported machine-readable route
    ([ADR 0009](docs/adr/0009-source-acquisition.md)).
 3. Build the organisation table from ODS ([ADR 0008](docs/adr/0008-organisation-reference-data.md)).

@@ -56,6 +56,12 @@ class FormatChange(_Model):
     note: str
 
 
+class LayoutNote(_Model):
+    verified: date
+    files: list[str]
+    note: str
+
+
 class Dataset(_Model):
     id: str
     title: str
@@ -72,6 +78,7 @@ class Dataset(_Model):
     dimensions: list[Dimension]
     measures: list[Measure]
     caveats: list[Caveat] = []
+    file_layout_notes: list[LayoutNote] = []
     known_format_changes: list[FormatChange] = []
 
     def measure(self, measure_id: str) -> Measure:

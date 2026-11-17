@@ -4,7 +4,13 @@ from __future__ import annotations
 
 import polars as pl
 
-KNOWN = pl.col("weeks_band") != "unknown_clock_start"
+KNOWN = pl.col("weeks_lower").is_not_null()  # excludes unknown_clock_start and unbanded
+
+
+def new_periods(long: pl.DataFrame, by: list[str]) -> pl.DataFrame:
+    """Clock starts in the month (Part_3), which is published without wait bands."""
+    return (long.filter(pl.col("rtt_part_type") == "Part_3")
+            .group_by(by).agg(pl.col("patients").sum().alias("new_rtt_periods")).sort(by))
 
 
 def rtt_summary(long: pl.DataFrame, by: list[str]) -> pl.DataFrame:

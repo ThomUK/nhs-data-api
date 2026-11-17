@@ -2,6 +2,16 @@
 
 The column layout is detected from headers rather than fixed positions, because the
 publication has changed shape over time (ADR 0007, known_format_changes).
+
+How the totals are populated differs by pathway type (checked against the Aug and Sep 2026
+files):
+
+    Part_1A/1B  bands; Total = sum(bands); unknown clock start sometimes;
+                Total All = Total + unknown
+    Part_2/2A   bands, Total and unknown blank, Total All = sum(bands)
+    Part_3      no bands at all; Total All is the only figure
+
+Blank means "not applicable", not zero, so blanks are kept as nulls until validated.
 """
 
 from __future__ import annotations
@@ -33,6 +43,8 @@ _BAND = re.compile(r"^Gt (\d+) To (\d+) Weeks SUM 1$", re.IGNORECASE)
 _OPEN_BAND = re.compile(r"^Gt (\d+) Weeks SUM 1$", re.IGNORECASE)
 UNKNOWN_START = "Patients with unknown clock start date"
 TOTAL = "Total"
+TOTAL_ALL = "Total All"
+UNBANDED = "unbanded"
 _MONTHS = {
     m: i
     for i, m in enumerate(
@@ -88,47 +100,83 @@ def read_full_csv(source: Path | bytes) -> pl.DataFrame:
 
 def tidy(wide: pl.DataFrame) -> pl.DataFrame:
     """Wide publication layout -> long table at the catalogue grain, with validation."""
-    wide = wide.rename({c: c.strip() for c in wide.columns})
-    missing = [c for c in ID_COLUMNS if c not in wide.columns]
+    wide = wide.rename({c: c.strip().lstrip("\ufeff") for c in wide.columns})
+    missing = [c for c in [*ID_COLUMNS, TOTAL_ALL] if c not in wide.columns]
     if missing:
         raise RttFormatError(f"missing identifier columns: {missing}")
     bands = classify_band_columns(wide.columns)
     if not bands:
         raise RttFormatError("no weekly band columns found")
+    band_cols = list(bands)
+    optional = [c for c in (TOTAL, UNKNOWN_START) if c in wide.columns]
 
-    value_cols = list(bands) + ([UNKNOWN_START] if UNKNOWN_START in wide.columns else [])
-    numeric = wide.with_columns(
-        pl.col(c).str.strip_chars().cast(pl.Int64, strict=True).fill_null(0)
-        for c in value_cols + ([TOTAL] if TOTAL in wide.columns else [])
+    num = wide.with_columns(
+        pl.col(c).str.strip_chars().replace("", None).cast(pl.Int64, strict=True)
+        for c in [*band_cols, *optional, TOTAL_ALL]
     )
+    for c in (TOTAL, UNKNOWN_START):
+        if c not in num.columns:
+            num = num.with_columns(pl.lit(None, pl.Int64).alias(c))
+    num = num.with_columns(
+        pl.any_horizontal(pl.col(band_cols).is_not_null()).alias("_has_bands"),
+        pl.sum_horizontal(band_cols).alias("_band_sum"),
+    )
+    _validate(num)
 
-    if TOTAL in numeric.columns:
-        bad = numeric.filter(pl.sum_horizontal(list(bands)) != pl.col(TOTAL))
-        if bad.height:
-            raise RttFormatError(f"{bad.height} rows where weekly bands do not sum to Total")
-
-    periods = numeric["Period"].unique().to_list()
-    period_map = {p: parse_period(p) for p in periods}
-
-    long = (
-        numeric.select(list(ID_COLUMNS) + value_cols)
+    period_map = {p: parse_period(p) for p in num["Period"].unique().to_list()}
+    ids = list(ID_COLUMNS.values())
+    banded = (
+        num.filter("_has_bands")
+        .select([*ID_COLUMNS, *band_cols, UNKNOWN_START])
         .rename(ID_COLUMNS)
-        .unpivot(index=list(ID_COLUMNS.values()), on=value_cols,
-                 variable_name="weeks_band", value_name="patients")
+        .unpivot(index=ids, variable_name="weeks_band", value_name="patients")
     )
+    unbanded = (
+        num.filter(~pl.col("_has_bands"))
+        .select([*ID_COLUMNS, TOTAL_ALL])
+        .rename({**ID_COLUMNS, TOTAL_ALL: "patients"})
+        .with_columns(pl.lit(UNBANDED).alias("weeks_band"))
+        .select([*ids, "weeks_band", "patients"])
+    )
+    long = pl.concat([banded, unbanded])
+
     lower = {c: lo for c, (lo, _) in bands.items()}
     upper = {c: hi for c, (_, hi) in bands.items()}
+    labels = {**{c: _band_label(*b) for c, b in bands.items()},
+              UNKNOWN_START: "unknown_clock_start", UNBANDED: UNBANDED}
     long = long.with_columns(
         pl.col("period_raw").replace_strict(period_map, return_dtype=pl.Date).alias("period"),
         pl.col("weeks_band").replace_strict(lower, default=None, return_dtype=pl.Int16)
         .alias("weeks_lower"),
         pl.col("weeks_band").replace_strict(upper, default=None, return_dtype=pl.Int16)
         .alias("weeks_upper"),
-        pl.col("weeks_band").replace_strict(
-            {**{c: _band_label(*b) for c, b in bands.items()}, UNKNOWN_START: "unknown_clock_start"}
-        ),
+        pl.col("weeks_band").replace_strict(labels),
     )
-    return long.select(list(OUTPUT_SCHEMA)).cast(OUTPUT_SCHEMA).filter(pl.col("patients") != 0)
+    return (
+        long.select(list(OUTPUT_SCHEMA)).cast(OUTPUT_SCHEMA)
+        .filter(pl.col("patients").is_not_null() & (pl.col("patients") != 0))
+    )
+
+
+def _validate(num: pl.DataFrame) -> None:
+    """Check internal consistency of every row; raise with a count and example on failure."""
+    unknown = pl.col(UNKNOWN_START).fill_null(0)
+    rules = {
+        "weekly bands do not sum to Total": pl.col("_has_bands") & pl.col(TOTAL).is_not_null()
+        & (pl.col("_band_sum") != pl.col(TOTAL)),
+        "Total All is not Total + unknown clock start": pl.col("_has_bands")
+        & (pl.col(TOTAL_ALL) != pl.coalesce(TOTAL, "_band_sum") + unknown),
+        "row has no bands and no Total All": ~pl.col("_has_bands") & pl.col(TOTAL_ALL).is_null(),
+        "negative count": pl.any_horizontal(
+            [pl.col(c) < 0 for c in num.columns if c.endswith("SUM 1") or c == TOTAL_ALL]
+        ),
+    }
+    for message, failing in rules.items():
+        bad = num.filter(failing.fill_null(False))
+        if bad.height:
+            example = bad.select("Provider Org Code", "RTT Part Type",
+                                 "Treatment Function Code").row(0)
+            raise RttFormatError(f"{bad.height} rows: {message} (e.g. {example})")
 
 
 def _band_label(lower: int, upper: int | None) -> str:

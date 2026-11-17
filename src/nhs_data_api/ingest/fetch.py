@@ -77,3 +77,25 @@ def archive_url(url: str, dataset: str, publication: str, raw_dir: Path = RAW_DI
         )
     )
     return ArchivedFile(target, sha, url, already_present=False)
+
+
+def archive_local(path: Path, dataset: str, publication: str, source_url: str | None = None,
+                  raw_dir: Path = RAW_DIR) -> ArchivedFile:
+    """Copy a manually downloaded file into the raw archive, with the same metadata sidecar."""
+    content = Path(path).read_bytes()
+    target = raw_dir / dataset / publication / Path(path).name
+    meta_path = target.with_name(target.name + ".meta.json")
+    sha = hashlib.sha256(content).hexdigest()
+    if target.exists() and meta_path.exists():
+        return ArchivedFile(target, json.loads(meta_path.read_text())["sha256"], source_url or "",
+                            already_present=True)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    target.write_bytes(content)
+    meta_path.write_text(json.dumps({
+        "source_url": source_url,
+        "retrieved_at": datetime.now(UTC).isoformat(),
+        "retrieval": "manual download",
+        "sha256": sha,
+        "bytes": len(content),
+    }, indent=2))
+    return ArchivedFile(target, sha, source_url or "", already_present=False)

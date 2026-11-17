@@ -48,8 +48,9 @@ dimensions:
     label: Waiting-time band
     description: >
       Weeks waited, as a half-open interval (weeks_lower, weeks_upper]. The final band is
-      open-ended (more than 104 weeks in current files). A separate band counts patients
-      with an unknown clock start date.
+      open-ended (more than 104 weeks in current files). Two special bands have no weeks:
+      "unknown_clock_start" (completed pathways Part_1A/1B only) and "unbanded" (Part_3 new
+      RTT periods, which are published as a single total with no waiting-time split).
 
 measures:
   - id: patients
@@ -61,8 +62,10 @@ measures:
     label: Total waiting list (incomplete pathways)
     unit: count
     aggregation: sum
-    definition: Sum of patients across all known-clock-start bands for rtt_part_type Part_2.
-    caveat: Excludes pathways with an unknown clock start date, which are reported separately.
+    definition: Sum of patients across all weekly bands for rtt_part_type Part_2.
+    caveat: >
+      Sum of submitted data only. NHS England's published national headline may also include
+      estimates for organisations that did not submit, so it can be higher.
   - id: pct_within_18_weeks
     label: Percentage of incomplete pathways waiting 18 weeks or less
     unit: percent
@@ -81,6 +84,18 @@ measures:
       weekly band containing the 50th percentile.
     status: draft
     caveat: Method to be verified against NHS England published medians.
+  - id: new_rtt_periods
+    label: New RTT periods (clock starts)
+    unit: count
+    aggregation: sum
+    definition: Sum of patients for rtt_part_type Part_3 (weeks_band "unbanded").
+  - id: completed_pathways
+    label: Completed pathways
+    unit: count
+    aggregation: sum
+    definition: >
+      Sum of patients for Part_1A (admitted) or Part_1B (non-admitted), including those with an
+      unknown clock start date.
   - id: waiting_over_52_weeks
     label: Patients waiting more than 52 weeks
     unit: count
@@ -107,6 +122,17 @@ caveats:
       patient record go-live). Missing data are not zeros; national totals in the source may
       include estimates for non-submitters. Organisation-month caveats are listed here as
       they are identified.
+
+file_layout_notes:
+  - verified: 2026-11-17
+    files: [RTT August 2026 full extract, RTT September 2026 full extract]
+    note: >
+      121 columns: 13 identifiers, 105 weekly bands (0-1 ... 103-104, >104), Total,
+      Patients with unknown clock start date, Total All. Part_1A/1B populate bands and Total,
+      sometimes unknown clock start; Total All = Total + unknown. Part_2/2A populate bands
+      only; Total and unknown are blank; Total All = sum of bands. Part_3 populates Total All
+      only. Blank cells mean "not applicable", not zero. Rows are at provider x commissioner x
+      treatment function grain; C_999 is the all-specialties total.
 
 known_format_changes:
   - date: 2021-04-01

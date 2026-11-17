@@ -7,7 +7,7 @@ from pathlib import Path
 
 from .catalogue import load_catalogue
 from .ingest import rtt
-from .ingest.fetch import archive_url
+from .ingest.fetch import archive_local, archive_url
 from .paths import PROCESSED_DIR
 
 
@@ -17,6 +17,7 @@ def main(argv: list[str] | None = None) -> None:
     ing = sub.add_parser("ingest-rtt", help="archive and parse one RTT Full CSV file")
     ing.add_argument("source", help="local path or https URL of the Full CSV (zip or csv)")
     ing.add_argument("--vintage", required=True, help="publication date, YYYY-MM-DD")
+    ing.add_argument("--source-url", help="where a local file was downloaded from (provenance)")
     sub.add_parser("catalogue-check", help="validate catalogue YAML")
     args = p.parse_args(argv)
 
@@ -27,9 +28,11 @@ def main(argv: list[str] | None = None) -> None:
         src = args.source
         if src.startswith("https://"):
             archived = archive_url(src, "rtt", args.vintage)
-            print(("already archived: " if archived.already_present else "archived: ")
-                  + str(archived.path))
-            src = archived.path
+        else:
+            archived = archive_local(Path(src), "rtt", args.vintage, args.source_url)
+        print(("already archived: " if archived.already_present else "archived: ")
+              + str(archived.path))
+        src = archived.path
         df = rtt.tidy(rtt.read_full_csv(Path(src)))
         out = rtt.write_vintage(df, PROCESSED_DIR / "rtt", args.vintage)
         print(f"wrote {df.height:,} rows to {out}")
