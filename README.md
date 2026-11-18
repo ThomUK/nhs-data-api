@@ -63,6 +63,13 @@ uv run nda build-site
 
 After adding files each month: `uv run nda archive-push -m "RTT October 2026"`.
 
+## Deployment
+
+One container per release (code plus that month's data) on a London server behind nginx and
+Cloudflare; GitHub Actions rebuilds from the archive, blocks the release unless figures
+reconcile with NHS England, then deploys. Runbook: [docs/deploy.md](docs/deploy.md);
+decision: [ADR 0010](docs/adr/0010-uk-hosting.md).
+
 ## API documentation
 
 Generated into [`site/api/`](site/api/index.html) by `uv run nda build-docs` (also run by

@@ -6,3 +6,6 @@ __pycache__/
 # Local data lake: raw archive and processed Parquet never go in git.
 /data/
 !/data/.gitkeep
+
+# Release data bundle (built in CI, copied into the image)
+/bundle/

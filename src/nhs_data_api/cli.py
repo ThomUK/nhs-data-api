@@ -32,6 +32,10 @@ def main(argv: list[str] | None = None) -> None:
     sub.add_parser("archive-verify", help="check archived files against the manifest")
     sub.add_parser("diff-vintages", help="compare archived versions of the same month")
     sub.add_parser("build-docs", help="generate the API documentation subsite (site/api)")
+    sub.add_parser("reconcile-archive",
+                   help="reconcile every archived Incomplete Provider workbook (release gate)")
+    bun = sub.add_parser("bundle", help="collect the data the API serves (for the image)")
+    bun.add_argument("--out", default="bundle")
     arc = sub.add_parser("archive", help="copy a manually downloaded file into the raw archive")
     arc.add_argument("files", nargs="+")
     arc.add_argument("--dataset", required=True)
@@ -67,6 +71,20 @@ def main(argv: list[str] | None = None) -> None:
         out = rtt.write_vintage(df, PROCESSED_DIR / "rtt", args.vintage)
         print(f"wrote {df.height:,} rows to {out}")
         print("metrics: " + ", ".join(str(p) for p in build_rtt_metrics(PROCESSED_DIR)))
+    elif args.cmd == "reconcile-archive":
+        from .release import reconcile_archive
+        results = reconcile_archive(RAW_DIR, PROCESSED_DIR)
+        for r in results:
+            bad = {c["measure"]: c["mismatches"] for c in r["checks"] if c["mismatches"]}
+            print(f"{r['period'][:7]}: {r['rows_compared']} rows, "
+                  f"{'all match' if r['ok'] else f'MISMATCHES {bad}'}")
+        if not results:
+            sys.exit("no Incomplete Provider workbooks in the archive: nothing to reconcile")
+        sys.exit(0 if all(r["ok"] for r in results) else 1)
+    elif args.cmd == "bundle":
+        from .release import build_bundle
+        out = build_bundle(PROCESSED_DIR, Path(args.out))
+        print(f"bundle: {out}\n{(out / 'bundle.json').read_text()}")
     elif args.cmd == "build-docs":
         from .docsite import build_docs
         for path in build_docs():

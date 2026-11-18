@@ -14,6 +14,6 @@ New ADRs copy `template.md` and take the next number. Superseded ADRs stay, mark
 | 0007 | [Semantic catalogue as single source of truth](0007-semantic-catalogue.md) | Accepted |
 | 0008 | [Organisation reference data from the public ODS ORD API](0008-organisation-reference-data.md) | Accepted |
 | 0009 | [Source acquisition and polite fetching](0009-source-acquisition.md) | Accepted |
-| 0010 | [UK hosting, portable deployment](0010-uk-hosting.md)         | Proposed |
+| 0010 | [Hosting: one container on a London server, behind Cloudflare](0010-uk-hosting.md) | Accepted |
 | 0011 | [Agent interface: OpenAPI, MCP, llms.txt](0011-agent-interface.md) | Accepted |
 | 0012 | [Durable raw archive in a private git repository](0012-durable-raw-archive.md) | Accepted |

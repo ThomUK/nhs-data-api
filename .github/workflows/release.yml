@@ -1,0 +1,119 @@
+# Builds and deploys the API: restore the archive, rebuild, reconcile against NHS England's
+# published workbooks (the release gate), bundle the data into an image, deploy over SSH.
+# Setup (secrets, server): docs/deploy.md.
+name: Release API
+
+on:
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: "Deploy to the server after building"
+        type: boolean
+        default: true
+  repository_dispatch:
+    types: [archive-updated]   # optional trigger from the archive repository
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  IMAGE: ghcr.io/thomuk/nhs-data-api
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check out the raw archive
+        uses: actions/checkout@v4
+        with:
+          repository: ThomUK/nhs-data-archive
+          token: ${{ secrets.ARCHIVE_TOKEN }}
+          path: archive
+
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+
+      - name: Paths
+        run: |
+          echo "NDA_RAW_DIR=$GITHUB_WORKSPACE/archive" >> "$GITHUB_ENV"
+          echo "NDA_DATA_DIR=$RUNNER_TEMP/data" >> "$GITHUB_ENV"
+
+      - name: Tests
+        run: uv run pytest -q
+
+      - name: Verify archive checksums
+        run: uv run nda archive-verify
+
+      - name: Rebuild from the archive
+        run: uv run nda rebuild-rtt
+
+      - name: Release gate - reconcile with NHS England's published figures
+        run: uv run nda reconcile-archive
+
+      - name: Bundle the served data
+        run: uv run nda bundle --out bundle
+
+      - id: version
+        run: echo "tag=$(jq -r .data_version bundle/bundle.json)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ${{ env.IMAGE }}:${{ steps.version.outputs.tag }}
+            ${{ env.IMAGE }}:latest
+
+  deploy:
+    needs: build
+    if: github.event_name == 'repository_dispatch' || inputs.deploy
+    runs-on: ubuntu-latest
+    environment: production   # add required reviewers here to approve each deploy
+    steps:
+      - name: SSH key
+        run: |
+          install -m 700 -d ~/.ssh
+          echo "${{ secrets.DEPLOY_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          echo "${{ secrets.DEPLOY_KNOWN_HOSTS }}" > ~/.ssh/known_hosts
+
+      - name: Deploy
+        env:
+          TARGET: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
+          TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          ssh "$TARGET" "set -e
+            cd /opt/nhs-data-api
+            echo IMAGE_TAG=$TAG > .env
+            docker compose pull --quiet
+            docker compose up -d --remove-orphans
+            docker image prune -f --filter until=2160h >/dev/null"
+
+      - name: Smoke test
+        env:
+          TARGET: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
+          TAG: ${{ needs.build.outputs.tag }}
+        run: |
+          for i in $(seq 1 20); do
+            if ssh "$TARGET" "curl -fsS http://127.0.0.1:8000/health" | grep -q "\"$TAG\""; then
+              echo "serving $TAG"; exit 0
+            fi
+            sleep 3
+          done
+          echo "new version not serving; previous containers remain for rollback" >&2
+          exit 1

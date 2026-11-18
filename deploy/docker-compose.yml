@@ -1,0 +1,20 @@
+# On the server: /opt/nhs-data-api/docker-compose.yml (see docs/deploy.md).
+# IMAGE_TAG is written to .env by each deploy; change it to roll back.
+services:
+  api:
+    image: ghcr.io/thomuk/nhs-data-api:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"   # only nginx on this host can reach it
+    read_only: true
+    tmpfs:
+      - /tmp
+    mem_limit: 512m
+    cpus: 1.0
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"

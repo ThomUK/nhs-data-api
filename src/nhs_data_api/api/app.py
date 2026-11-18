@@ -6,7 +6,7 @@ from datetime import date
 from typing import Literal
 
 import polars as pl
-from fastapi import FastAPI, HTTPException, Query
+from fastapi import FastAPI, HTTPException, Query, Request
 
 from .. import __version__
 from ..catalogue import load_catalogue
@@ -22,6 +22,31 @@ app = FastAPI(
         "and defining each measure returned."
     ),
 )
+
+# Data changes once a month, so successful responses can be cached. Browsers keep them for
+# an hour; the CDN (Cloudflare) for a day, and is purged or expires after each release.
+CACHE_CONTROL = "public, max-age=3600, s-maxage=86400"
+
+
+def _data_version() -> str:
+    path = PROCESSED_DIR / "bundle.json"
+    try:
+        import json
+        return json.loads(path.read_text())["data_version"]
+    except (FileNotFoundError, KeyError, ValueError):
+        return "dev"
+
+
+@app.middleware("http")
+async def cache_headers(request: Request, call_next):
+    response = await call_next(request)
+    if request.method == "GET" and response.status_code == 200:
+        response.headers.setdefault("Cache-Control", CACHE_CONTROL)
+    else:
+        response.headers.setdefault("Cache-Control", "no-store")
+    response.headers["X-Data-Version"] = _data_version()
+    return response
+
 
 View = Literal["national", "provider", "provider_icb", "population_icb", "population_sub_icb"]
 MAX_ROWS = 1000
@@ -48,8 +73,8 @@ def _meta(dataset_id: str, measures: list[str] | None = None, **extra) -> dict:
 
 @app.get("/health")
 def health() -> dict:
-    """Service status and version."""
-    return {"status": "ok", "version": __version__}
+    """Service status, code version and data version."""
+    return {"status": "ok", "version": __version__, "data_version": _data_version()}
 
 
 @app.get("/v1/datasets")
