@@ -28,7 +28,7 @@ Licence; reuse is permitted with attribution.</li>
 <div class=note>The API is not yet publicly deployed. Examples use <code>https://&lt;api-host&gt;</code> as
 a placeholder for the host.</div>
 <p>England's waiting list, % within 18 weeks and median wait since July 2026:</p><pre><code class="shell">curl &quot;https://&lt;api-host&gt;/v1/rtt/metrics?view=national&amp;measures=waiting_list_total,pct_within_18_weeks,median_wait_weeks&amp;period_from=2026-07-01&quot;</code></pre>
-<p class=small><strong>Response</strong> <span class=muted>(real data; long lists and meta shortened)</span></p><pre class="response"><code class="json">{
+<details class=response-toggle><summary class=small><strong>Response</strong> <span class=muted>(real data; long lists and meta shortened)</span></summary><pre class="response"><code class="json">{
   &quot;data&quot;: [
     {
       &quot;period&quot;: &quot;2026-07-01&quot;,
@@ -86,9 +86,9 @@ a placeholder for the host.</div>
     &quot;rows&quot;: 3,
     &quot;truncated&quot;: false
   }
-}</code></pre>
+}</code></pre></details>
 <p>One trust (Guy's and St Thomas', ODS code <code>RJ1</code>), latest month, all measures:</p><pre><code class="shell">curl &quot;https://&lt;api-host&gt;/v1/rtt/metrics?view=provider&amp;org=RJ1&quot;</code></pre>
-<p class=small><strong>Response</strong> <span class=muted>(real data; long lists and meta shortened)</span></p><pre class="response"><code class="json">{
+<details class=response-toggle><summary class=small><strong>Response</strong> <span class=muted>(real data; long lists and meta shortened)</span></summary><pre class="response"><code class="json">{
   &quot;data&quot;: [
     {
       &quot;period&quot;: &quot;2026-09-01&quot;,
@@ -151,9 +151,9 @@ a placeholder for the host.</div>
     &quot;rows&quot;: 1,
     &quot;truncated&quot;: false
   }
-}</code></pre>
+}</code></pre></details>
 <p>Find an NHS trust's code:</p><pre><code class="shell">curl &quot;https://&lt;api-host&gt;/v1/organisations?q=bristol&amp;sector=nhs_trust&quot;</code></pre>
-<p class=small><strong>Response</strong> <span class=muted>(real data; long lists and meta shortened)</span></p><pre class="response"><code class="json">{
+<details class=response-toggle><summary class=small><strong>Response</strong> <span class=muted>(real data; long lists and meta shortened)</span></summary><pre class="response"><code class="json">{
   &quot;data&quot;: [
     {
       &quot;org_code&quot;: &quot;RA7&quot;,
@@ -219,7 +219,7 @@ a placeholder for the host.</div>
     &quot;rows&quot;: 2,
     &quot;truncated&quot;: false
   }
-}</code></pre>
+}</code></pre></details>
 <h2>Concepts</h2>
 <h3>Views</h3>
 <p>Waiting-list data can be grouped by who treats patients or by where they live:</p>

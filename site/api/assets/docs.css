@@ -61,6 +61,9 @@ background:var(--surface-2);margin-right:8px}
 @media (max-width:960px){.split{grid-template-columns:minmax(0,1fr);gap:12px}
 .split>.code{position:static}}
 pre.response{max-height:26em;overflow:auto}
+details.response-toggle{margin:-4px 0 20px}
+details.response-toggle summary{padding:4px 0}
+details.response-toggle[open] summary{margin-bottom:8px}
 footer{color:var(--muted);font-size:13px;max-width:960px;margin:0 auto;padding:0 24px 40px}
 @media (max-width:640px){main{padding:20px 16px 48px}header.top{padding:10px 16px}
 h1{font-size:25px}}

@@ -24,6 +24,7 @@ def test_build_docs(tmp_path):
 
     overview = (out / "index.html").read_text()
     assert overview.count("<strong>Response</strong>") == 3  # one per quick-start example
+    assert overview.count("<details class=response-toggle>") == 3  # collapsed by default
     assert "&quot;org_code&quot;: &quot;RJ1&quot;" in overview
     objects = (out / "objects.html").read_text()
     for anchor in ("measure_row", "meta", "organisation", "submission_record", "non_submitter"):

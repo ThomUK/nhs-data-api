@@ -117,6 +117,9 @@ background:var(--surface-2);margin-right:8px}
 @media (max-width:960px){.split{grid-template-columns:minmax(0,1fr);gap:12px}
 .split>.code{position:static}}
 pre.response{max-height:26em;overflow:auto}
+details.response-toggle{margin:-4px 0 20px}
+details.response-toggle summary{padding:4px 0}
+details.response-toggle[open] summary{margin-bottom:8px}
 footer{color:var(--muted);font-size:13px;max-width:960px;margin:0 auto;padding:0 24px 40px}
 @media (max-width:640px){main{padding:20px 16px 48px}header.top{padding:10px 16px}
 h1{font-size:25px}}
@@ -512,9 +515,10 @@ def _quickstart_html(responses: dict[str, dict]) -> str:
         response = responses.get(f"{path}?{query}" if query else path)
         parts.append(f"<p>{intro}</p>" + _code(f'curl "{_url(path, params)}"', "shell"))
         if response is not None:
-            parts.append("<p class=small><strong>Response</strong> "
-                         "<span class=muted>(real data; long lists and meta shortened)</span></p>"
-                         + _code(_json(response), "json", "response"))
+            parts.append("<details class=response-toggle><summary class=small>"
+                         "<strong>Response</strong> <span class=muted>(real data; long lists "
+                         "and meta shortened)</span></summary>"
+                         + _code(_json(response), "json", "response") + "</details>")
     return "\n".join(parts)
 
 
