@@ -1,4 +1,4 @@
-# NHS Data API (working title)
+# secondthursday
 
 > Public NHS England statistics as JSON, with every figure's definition, source,
 > licence (Open Government Licence v3.0) and caveats in the response `meta`.

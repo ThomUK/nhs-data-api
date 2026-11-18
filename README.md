@@ -1,4 +1,4 @@
-# NHS Data API (working title)
+# secondthursday
 
 Public NHS England performance statistics served from modern API endpoints, built to be
 equally useful to AI agents and human programmers. Every number comes back with its
@@ -22,7 +22,7 @@ All decisions are in [`docs/adr/`](docs/adr/README.md).
 ```
 catalogue/          public semantic catalogue: datasets, measures, caveats, source manifests
 docs/adr/           architecture decision records
-site/               static admin site (GitHub Pages); data exported by `nda build-site`
+site/               static admin site (GitHub Pages); data exported by `st build-site`
 src/nhs_data_api/
   catalogue.py      catalogue models and loader
   ingest/fetch.py   polite downloader into the immutable raw archive
@@ -41,10 +41,10 @@ data/               local data lake (git-ignored)
 ```bash
 uv sync
 uv run pytest
-uv run nda catalogue-check
-uv run nda ingest-rtt path/to/Full-CSV-data-file.zip --vintage 2026-11-13
-uv run nda build-rtt-metrics                         # also runs after each ingest
-uv run nda reconcile-rtt Incomplete-Provider.xlsx --period 2026-09-01
+uv run st catalogue-check
+uv run st ingest-rtt path/to/Full-CSV-data-file.zip --vintage 2026-11-13
+uv run st build-rtt-metrics                         # also runs after each ingest
+uv run st reconcile-rtt Incomplete-Provider.xlsx --period 2026-09-01
 uv run uvicorn nhs_data_api.api.app:app --reload   # then open /docs
 ```
 
@@ -55,13 +55,13 @@ Source files are kept in a private archive repository
 
 ```bash
 git clone https://github.com/ThomUK/nhs-data-archive ../nhs-data-archive
-export NDA_RAW_DIR=../nhs-data-archive NDA_DATA_DIR=/path/to/scratch/data
-uv run nda archive-verify          # every file matches MANIFEST.csv
-uv run nda rebuild-rtt             # processed layer + metrics (~3 minutes)
-uv run nda build-site
+export ST_RAW_DIR=../nhs-data-archive ST_DATA_DIR=/path/to/scratch/data
+uv run st archive-verify          # every file matches MANIFEST.csv
+uv run st rebuild-rtt             # processed layer + metrics (~3 minutes)
+uv run st build-site
 ```
 
-After adding files each month: `uv run nda archive-push -m "RTT October 2026"`.
+After adding files each month: `uv run st archive-push -m "RTT October 2026"`.
 
 ## Deployment
 
@@ -72,8 +72,8 @@ decision: [ADR 0010](docs/adr/0010-uk-hosting.md).
 
 ## API documentation
 
-Generated into [`site/api/`](site/api/index.html) by `uv run nda build-docs` (also run by
-`nda build-site`): overview, endpoint reference from the OpenAPI spec with real example
+Generated into [`site/api/`](site/api/index.html) by `uv run st build-docs` (also run by
+`st build-site`): overview, endpoint reference from the OpenAPI spec with real example
 responses, dataset and measure pages from the catalogue, `openapi.json` and `llms.txt`.
 It is self-contained so it can be hosted publicly on its own.
 
@@ -81,8 +81,8 @@ It is self-contained so it can be hosted publicly on its own.
 
 A static admin site in [`site/`](site/README.md) (GitHub Pages): publication calendar with the
 files to collect on each date, RTT time series with anomaly flags, and validation results
-(reconciliation, submissions, organisation lineage and revisions; `nda diff-vintages`).
-Rebuild its data with `uv run nda build-site`.
+(reconciliation, submissions, organisation lineage and revisions; `st diff-vintages`).
+Rebuild its data with `uv run st build-site`.
 
 ## API (first slice)
 
@@ -99,11 +99,11 @@ Rebuild its data with `uv run nda build-site`.
 
 ## Next steps
 
-1. Each month: ingest the Full CSV, then `nda reconcile-rtt` against the Incomplete Provider
+1. Each month: ingest the Full CSV, then `st reconcile-rtt` against the Incomplete Provider
    workbook before publishing.
 2. Contact the NHS England statistics team about a supported machine-readable route
    ([ADR 0009](docs/adr/0009-source-acquisition.md)).
-3. Refresh the ODS snapshot (`nda fetch-ods`) when new organisations appear, and review lineage
+3. Refresh the ODS snapshot (`st fetch-ods`) when new organisations appear, and review lineage
    candidates on the admin site's validation page.
 4. Inspect WLMDS files and complete `catalogue/datasets/wlmds.yaml`.
 5. MCP server over the API ([ADR 0011](docs/adr/0011-agent-interface.md)), API keys and metering.

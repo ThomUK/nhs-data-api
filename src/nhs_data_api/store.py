@@ -116,5 +116,5 @@ def read_submissions(processed_dir: Path) -> pl.DataFrame:
 def read_organisations(processed_dir: Path) -> pl.DataFrame:
     path = processed_dir / "ods" / "organisations.parquet"
     if not path.exists():
-        raise NoDataError("organisation data has not been fetched yet (nda fetch-ods)")
+        raise NoDataError("organisation data has not been fetched yet (st fetch-ods)")
     return pl.read_parquet(path)

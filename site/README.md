@@ -7,18 +7,18 @@ Static pages served from GitHub Pages (`.github/workflows/pages.yml`):
 - `validation.html`: reconciliation runs against NHS England's published figures.
 
 No build step: plain HTML, CSS and ES modules. Data is exported to `site/data/` by
-`uv run nda build-site` after ingesting or reconciling, then committed.
+`uv run st build-site` after ingesting or reconciling, then committed.
 
 Preview locally:
 
 ```bash
-uv run nda build-site
+uv run st build-site
 python -m http.server -d site 8000   # http://localhost:8000
 ```
 
-Monthly routine: archive the files listed on the calendar (`nda archive ... --publication
-YYYY-MM-DD`), `nda ingest-rtt --vintage auto`, `nda reconcile-rtt`, `nda archive-push`,
-`nda build-site`, commit and push to main.
+Monthly routine: archive the files listed on the calendar (`st archive ... --publication
+YYYY-MM-DD`), `st ingest-rtt --vintage auto`, `st reconcile-rtt`, `st archive-push`,
+`st build-site`, commit and push to main.
 
 Scaling note: `timeseries/provider.json` is ~0.6 MB for two months. Before loading many
 years, split it per organisation so pages fetch only what they show.

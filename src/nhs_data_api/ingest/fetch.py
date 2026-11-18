@@ -16,7 +16,7 @@ from .. import __version__
 from ..paths import RAW_DIR
 
 USER_AGENT = (
-    f"nhs-data-api-ingest/{__version__} "
+    f"secondthursday-ingest/{__version__} "
     "(+https://github.com/ThomUK/nhs-data-api; open-data ingestion; low request rate)"
 )
 MIN_INTERVAL_SECONDS = 2.0

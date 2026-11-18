@@ -29,7 +29,7 @@ successor/predecessor links (`Succs`).
 
 ## Update 2026-11-17: implemented
 
-- `nda fetch-ods` snapshots ORD records for every organisation code in the loaded statistics
+- `st fetch-ods` snapshots ORD records for every organisation code in the loaded statistics
   (734 in November 2026, about three minutes at a gentle request rate) into
   `raw/ods/<date>/organisations.jsonl`, plus the ORD role list. The organisation table
   (`processed/ods/organisations.parquet`) adds sector (NHS trust, independent sector,

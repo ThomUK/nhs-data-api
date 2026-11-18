@@ -60,7 +60,7 @@ export function renderChrome(active) {
   const pages = [["index.html", "Calendar"], ["timeseries.html", "Time series"], ["validation.html", "Validation"],
     ["api/index.html", "API docs"]];
   const bar = el("header", { class: "topbar" },
-    el("div", { class: "brand" }, "NHS Data API", el("small", { text: "admin" })),
+    el("div", { class: "brand" }, "secondthursday", el("small", { text: "admin" })),
     el("nav", { "aria-label": "Admin pages" },
       pages.map(([href, label]) => el("a", { href, "aria-current": href === active ? "page" : null, text: label }))),
     el("div", { class: "build", id: "build-info" }));

@@ -34,7 +34,7 @@ datasets:
         pattern: "Incomplete-Provider-{mon}{yy}"
         role: validate
         required: true
-        purpose: Provider-level reconciliation (nda reconcile-rtt) before publishing.
+        purpose: Provider-level reconciliation (st reconcile-rtt) before publishing.
       - id: overview_timeseries
         label: RTT Overview Timeseries including estimates for missing trusts
         pattern: "RTT-Overview-Timeseries.*{mon}{yy}"

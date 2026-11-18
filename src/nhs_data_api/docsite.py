@@ -18,7 +18,7 @@ from .catalogue import Dataset, load_catalogue
 from .paths import PROCESSED_DIR, REPO_ROOT
 
 OUT = REPO_ROOT / "site" / "api"
-PRODUCT = "NHS Data API"
+PRODUCT = "secondthursday"
 BASE = "https://<api-host>"  # not yet deployed
 DESCRIPTION = ("Documentation for an API serving public NHS England statistics with "
                "definitions, sources and caveats.")
@@ -101,7 +101,7 @@ def _page(title: str, active: str, body: str, depth: int = 0) -> str:
 <title>{escape(title)}</title>
 <meta name="description" content="{DESCRIPTION}">
 <link rel="stylesheet" href="{root}assets/docs.css"></head><body>
-<header class="top"><div class="brand">{PRODUCT}<small>docs · working title</small></div>
+<header class="top"><div class="brand">{PRODUCT}<small>docs</small></div>
 <nav aria-label="Documentation">{nav}</nav></header>
 <main>{body}</main>
 <footer>Generated {datetime.now(UTC):%d %B %Y} · v{__version__} · Contains public sector
@@ -391,7 +391,7 @@ NHS.</p>"""
 
 
 def llms_txt(cat: dict[str, Dataset], spec: dict) -> str:
-    lines = [f"# {PRODUCT} (working title)", "",
+    lines = [f"# {PRODUCT}", "",
              "> Public NHS England statistics as JSON, with every figure's definition, source,",
              "> licence (Open Government Licence v3.0) and caveats in the response `meta`.", "",
              "Not yet publicly deployed; examples use https://<api-host>.", "",

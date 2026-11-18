@@ -1,7 +1,7 @@
 [project]
 name = "nhs-data-api"
 version = "0.1.0"
-description = "Agent-ready API over public NHS England statistics (working title)."
+description = "secondthursday: agent-ready API over public NHS England statistics."
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
@@ -21,7 +21,7 @@ dev = [
 ]
 
 [project.scripts]
-nda = "nhs_data_api.cli:main"
+st = "nhs_data_api.cli:main"
 
 [build-system]
 requires = ["hatchling"]

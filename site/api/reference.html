@@ -1,10 +1,10 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Endpoints · NHS Data API</title>
+<title>Endpoints · secondthursday</title>
 <meta name="description" content="Documentation for an API serving public NHS England statistics with definitions, sources and caveats.">
 <link rel="stylesheet" href="assets/docs.css"></head><body>
-<header class="top"><div class="brand">NHS Data API<small>docs · working title</small></div>
+<header class="top"><div class="brand">secondthursday<small>docs</small></div>
 <nav aria-label="Documentation"><a href="index.html">Overview</a><a href="reference.html" aria-current=page>Endpoints</a><a href="datasets.html">Datasets &amp; measures</a><a href="llms.txt">llms.txt</a></nav></header>
 <main><h1>Endpoints</h1><p class=lede>All endpoints are read-only <code>GET</code> requests returning JSON with a <code>data</code> array or object and a <code>meta</code> block. The machine-readable spec is <a href=openapi.json>openapi.json</a> (OpenAPI 3.1.0).</p><ul class=small><li><a href='#v1-datasets'><code>/v1/datasets</code></a>: Datasets available, with status, frequency and a short summary.</li><li><a href='#v1-datasets-dataset_id'><code>/v1/datasets/{dataset_id}</code></a>: Full catalogue entry for one dataset: measures, views, dimensions, codes and caveats.</li><li><a href='#v1-rtt-metrics'><code>/v1/rtt/metrics</code></a>: RTT v1 measures for one view, filtered by organisation, period and specialty.</li><li><a href='#v1-rtt-submissions'><code>/v1/rtt/submissions</code></a>: Providers submitting each month; why last month&#x27;s providers are missing (merged or</li><li><a href='#v1-organisations'><code>/v1/organisations</code></a>: Organisations that appear in the statistics, from the ODS snapshot.</li><li><a href='#v1-organisations-org_code'><code>/v1/organisations/{org_code}</code></a>: One organisation, with ODS successor/predecessor links and curated lineage links.</li></ul><section class=endpoint id="v1-datasets"><h3><span class=method>GET</span><code>/v1/datasets</code></h3><p>Datasets available, with status, frequency and a short summary.</p><p class=small><strong>Example</strong></p><pre><code class="shell">curl &quot;https://&lt;api-host&gt;/v1/datasets&quot;</code></pre><details><summary class=small>Response (real data; lists and meta shortened)</summary><pre><code class="json">{
   &quot;data&quot;: [
@@ -347,6 +347,6 @@ recoded, closed, not submitted); and NHS trusts that have not submitted for long
     ]
   }
 }</code></pre></details></section></main>
-<footer>Generated 17 November 2026 · v0.1.0 · Contains public sector
+<footer>Generated 18 November 2026 · v0.1.0 · Contains public sector
 information licensed under the Open Government Licence v3.0.</footer>
 </body></html>

@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "NHS Data API (working title)",
+    "title": "secondthursday",
     "description": "Public NHS England statistics with definitions, sources and caveats attached. Every response includes a `meta` block citing the source publication and licence, and defining each measure returned.",
     "version": "0.1.0"
   },
@@ -9,7 +9,7 @@
     "/health": {
       "get": {
         "summary": "Health",
-        "description": "Service status and version.",
+        "description": "Service status, code version and data version.",
         "operationId": "health_health_get",
         "responses": {
           "200": {

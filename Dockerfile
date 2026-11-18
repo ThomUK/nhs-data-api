@@ -1,4 +1,4 @@
-# API image: the code plus one month's data bundle (built by `nda bundle`). See docs/deploy.md.
+# API image: the code plus one month's data bundle (built by `st bundle`). See docs/deploy.md.
 FROM python:3.13-slim
 
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
@@ -18,7 +18,7 @@ COPY bundle ./data/processed
 
 RUN useradd --system --uid 10001 --no-create-home api
 USER api
-ENV NDA_DATA_DIR=/app/data PATH=/app/.venv/bin:$PATH
+ENV ST_DATA_DIR=/app/data PATH=/app/.venv/bin:$PATH
 EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
   CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=4)"

@@ -14,7 +14,7 @@ from ..paths import PROCESSED_DIR
 from ..store import NoDataError, read_organisations, read_rtt_metrics, read_submissions
 
 app = FastAPI(
-    title="NHS Data API (working title)",
+    title="secondthursday",
     version=__version__,
     description=(
         "Public NHS England statistics with definitions, sources and caveats attached. "

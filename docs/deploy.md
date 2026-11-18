@@ -85,7 +85,7 @@ Actions → **Release API** → Run workflow. About 10 minutes:
    (e.g. `2026-09.202611181200`) and `latest`;
 5. deploys, then checks the server reports the new data version.
 
-Monthly routine: archive the release's files, `nda archive-push`, then run the workflow.
+Monthly routine: archive the release's files, `st archive-push`, then run the workflow.
 Cloudflare may serve cached responses for up to a day; purge its cache after a release if
 needed.
 

@@ -62,7 +62,7 @@ function submissions(subs) {
 }
 
 function lineage(l) {
-  if (!l || !l.snapshot) return [el("p", { class: "muted", text: "No ODS snapshot yet (nda fetch-ods)." })];
+  if (!l || !l.snapshot) return [el("p", { class: "muted", text: "No ODS snapshot yet (st fetch-ods)." })];
   const out = [el("p", { class: "small muted", text: `ODS snapshot ${l.snapshot}. Applied links make a merged or recoded provider count as the same provider in like-for-like measures and submission checks. Published figures stay under the publisher's codes.` })];
   out.push(el("div", { class: "table-wrap card", style: "padding:0" }, el("table", {},
     el("thead", {}, el("tr", {}, el("th", { text: "From" }), el("th", { text: "To" }), el("th", { text: "Effective" }), el("th", { text: "Source" }))),

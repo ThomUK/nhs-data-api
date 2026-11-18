@@ -44,23 +44,23 @@ jobs:
 
       - name: Paths
         run: |
-          echo "NDA_RAW_DIR=$GITHUB_WORKSPACE/archive" >> "$GITHUB_ENV"
-          echo "NDA_DATA_DIR=$RUNNER_TEMP/data" >> "$GITHUB_ENV"
+          echo "ST_RAW_DIR=$GITHUB_WORKSPACE/archive" >> "$GITHUB_ENV"
+          echo "ST_DATA_DIR=$RUNNER_TEMP/data" >> "$GITHUB_ENV"
 
       - name: Tests
         run: uv run pytest -q
 
       - name: Verify archive checksums
-        run: uv run nda archive-verify
+        run: uv run st archive-verify
 
       - name: Rebuild from the archive
-        run: uv run nda rebuild-rtt
+        run: uv run st rebuild-rtt
 
       - name: Release gate - reconcile with NHS England's published figures
-        run: uv run nda reconcile-archive
+        run: uv run st reconcile-archive
 
       - name: Bundle the served data
-        run: uv run nda bundle --out bundle
+        run: uv run st bundle --out bundle
 
       - id: version
         run: echo "tag=$(jq -r .data_version bundle/bundle.json)" >> "$GITHUB_OUTPUT"

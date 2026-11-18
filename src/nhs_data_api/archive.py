@@ -27,7 +27,7 @@ laid out as `<dataset>/<publication date>/<original file name>`. Each file has a
 `MANIFEST.csv` lists every file with its checksum.
 
 Files are never edited or deleted. Revised publications are archived under the release that
-republished them. Regenerate the processed layer from this archive with `nda rebuild-rtt`.
+republished them. Regenerate the processed layer from this archive with `st rebuild-rtt`.
 
 Source data: NHS England, Open Government Licence v3.0.
 """
@@ -116,7 +116,7 @@ def push(raw_dir: Path, message: str, remote: str = "origin", branch: str = "mai
     """Refresh the manifest, refuse if any archived file changed, then commit and push."""
     if not (raw_dir / ".git").exists():
         raise RuntimeError(f"{raw_dir} is not a git checkout; clone the archive repository "
-                           "there or set NDA_RAW_DIR to its checkout")
+                           "there or set ST_RAW_DIR to its checkout")
     before = verify(raw_dir)
     if before.changed or before.missing:
         raise RuntimeError(f"archived files changed or missing: {before.changed + before.missing}")

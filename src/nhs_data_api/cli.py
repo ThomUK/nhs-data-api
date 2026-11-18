@@ -1,4 +1,4 @@
-"""Command line: `nda ingest-rtt FILE_OR_URL --vintage YYYY-MM-DD`, `nda catalogue-check`."""
+"""Command line: `st ingest-rtt FILE_OR_URL --vintage YYYY-MM-DD`, `st catalogue-check`."""
 
 from __future__ import annotations
 
@@ -16,7 +16,7 @@ from .store import build_rtt_metrics, read_rtt_metrics, rebuild_rtt
 
 
 def main(argv: list[str] | None = None) -> None:
-    p = argparse.ArgumentParser(prog="nda")
+    p = argparse.ArgumentParser(prog="st")
     sub = p.add_subparsers(dest="cmd", required=True)
     ing = sub.add_parser("ingest-rtt", help="archive and parse one RTT Full CSV file")
     ing.add_argument("source", help="local path or https URL of the Full CSV (zip or csv)")
