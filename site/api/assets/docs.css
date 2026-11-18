@@ -40,6 +40,26 @@ border-radius:6px;color:var(--ink-2);margin:16px 0}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
 .card h3{margin:0 0 4px}.muted{color:var(--muted)}.small{font-size:14px}
 details summary{cursor:pointer;color:var(--ink-2);margin:4px 0}
+main.wide{max-width:1240px}
+.split{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:36px;
+align-items:start;padding:28px 0;border-top:1px solid var(--grid)}
+.split>.code{position:sticky;top:16px}
+.split>.code pre{max-height:calc(100vh - 180px);overflow:auto;margin:0 0 12px}
+.split h2{border:0;margin:0 0 8px;padding:0}
+.label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;
+letter-spacing:.05em;margin:0 0 6px}
+.fields{margin:8px 0 16px}.field{border-top:1px solid var(--grid);padding:10px 0}
+.field:last-child{border-bottom:1px solid var(--grid)}
+.fname{font:600 14px ui-monospace,SFMono-Regular,Menlo,monospace}
+.ftype{color:var(--muted);font-size:13px;margin-left:8px}
+.field p{margin:4px 0 0;font-size:14.5px}.field .muted{font-size:13.5px}
+.returns{font-size:14.5px;background:var(--surface);border:1px solid var(--border);
+border-radius:8px;padding:8px 12px;margin:12px 0}
+.status-code{font:600 13px ui-monospace,monospace;padding:2px 8px;border-radius:4px;
+background:var(--surface-2);margin-right:8px}
+.split>div{min-width:0}
+@media (max-width:960px){.split{grid-template-columns:minmax(0,1fr);gap:12px}
+.split>.code{position:static}}
 pre.response{max-height:26em;overflow:auto}
 footer{color:var(--muted);font-size:13px;max-width:960px;margin:0 auto;padding:0 24px 40px}
 @media (max-width:640px){main{padding:20px 16px 48px}header.top{padding:10px 16px}

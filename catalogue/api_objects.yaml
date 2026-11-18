@@ -1,0 +1,180 @@
+# Objects returned by the API, for the documentation (Objects page and endpoint "Returns").
+# Measure fields of the measure row come from catalogue/datasets/rtt.yaml (`measures_from`).
+# `example` names a real request made at docs build time and the part of the response shown.
+
+objects:
+  - id: measure_row
+    title: The measure row
+    summary: >
+      One organisation (or area) in one month and one specialty, with the requested measures
+      as columns. Which organisation a row describes depends on the view: a provider, an
+      ICB's providers, an ICB's residents, or England.
+    returned_by: ["/v1/rtt/metrics"]
+    example: {path: /v1/rtt/metrics, params: {view: provider, org: RJ1}, pick: data.0}
+    fields:
+      - {name: period, type: date, description: "Reporting month, as the first day of the month (ISO 8601)."}
+      - {name: org_code, type: string, description: "ODS code of the organisation or area. ENG for England; NHSE for care commissioned directly by NHS England (population views)."}
+      - {name: org_name, type: string, description: "Name as published for that month."}
+      - {name: treatment_function_code, type: string, description: "Specialty. C_999 is all specialties combined. Codes are listed on the RTT dataset page."}
+    measures_from: rtt
+
+  - id: meta
+    title: The meta object
+    summary: >
+      Returned with every successful response. It says where the data came from, how to cite
+      it, what caveats apply, and defines every measure returned, so a response can be used
+      on its own.
+    returned_by: ["all endpoints"]
+    example: {path: /v1/rtt/metrics, params: {view: provider, org: RJ1, measures: "waiting_list_total,p92_wait_weeks"}, pick: meta}
+    fields:
+      - {name: dataset, type: string, description: "Dataset id, e.g. rtt or organisations."}
+      - {name: title, type: string, description: "Dataset title."}
+      - {name: source_page, type: url, description: "The publisher's page for the source publication."}
+      - {name: licence, type: string, description: "Licence of the source data (Open Government Licence v3.0)."}
+      - {name: attribution, type: string, description: "Text to quote when citing the figures. Attribution is a condition of the licence."}
+      - {name: caveats, type: "array of caveat", link: caveat, description: "Known limitations that apply to the dataset. Pass them on with the figures."}
+      - {name: measures, type: "map of measure definition", link: measure_definition, nullable: true, description: "Definitions of the measures in this response, keyed by measure id. Present on measure endpoints."}
+      - {name: view, type: string, nullable: true, description: "The view used (measure endpoints)."}
+      - {name: rows, type: integer, nullable: true, description: "Number of rows matching the request, before any truncation."}
+      - {name: truncated, type: boolean, nullable: true, description: "True when more rows matched than were returned (the limit is 1,000). Narrow the request."}
+
+  - id: caveat
+    title: The caveat
+    summary: A known limitation of the data, returned in meta.caveats.
+    returned_by: ["meta.caveats"]
+    example: {path: /v1/rtt/metrics, params: {view: national}, pick: meta.caveats.0}
+    fields:
+      - {name: id, type: string, description: "Stable identifier, e.g. rtt-no-estimates."}
+      - {name: applies_to, type: string, description: "Scope of the caveat; all means the whole dataset."}
+      - {name: text, type: string, description: "Plain-English explanation."}
+
+  - id: measure_definition
+    title: The measure definition
+    summary: How a measure is defined, returned in meta.measures. The same definitions appear on the dataset pages.
+    returned_by: ["meta.measures"]
+    example: {path: /v1/rtt/metrics, params: {view: national, measures: pct_within_18_weeks}, pick: meta.measures.pct_within_18_weeks}
+    fields:
+      - {name: label, type: string, description: "Short human-readable name."}
+      - {name: unit, type: string, values: [count, percent, weeks], description: "Unit of the values."}
+      - {name: definition, type: string, description: "Exactly how the measure is calculated."}
+      - {name: status, type: string, values: [stable, draft, experimental], description: "experimental measures are only returned when requested with include_experimental=true."}
+      - {name: standard, type: string, nullable: true, description: "Related operational standard, e.g. the 92% 18-week standard."}
+      - {name: caveat, type: string, nullable: true, description: "Measure-specific caveat."}
+
+  - id: organisation
+    title: The organisation
+    summary: >
+      An organisation that appears in the statistics, from NHS England's Organisation Data
+      Service (ODS), with the links used to follow it through mergers and recodes.
+    returned_by: ["/v1/organisations", "/v1/organisations/{org_code}"]
+    example: {path: /v1/organisations/RA7, params: {}, pick: data}
+    fields:
+      - {name: org_code, type: string, description: "ODS code."}
+      - {name: name, type: string, description: "Name in the ODS snapshot."}
+      - {name: sector, type: string, values: [nhs_trust, independent_sector, commissioner, other], description: "Derived from the ODS primary role."}
+      - {name: primary_role, type: string, description: "ODS primary role code, e.g. RO197 (NHS trust)."}
+      - {name: primary_role_name, type: string, description: "Name of the primary role."}
+      - {name: status, type: string, description: "ODS status (Active or Inactive)."}
+      - {name: operational_start, type: date, nullable: true, description: "Date the organisation became operational."}
+      - {name: operational_end, type: date, nullable: true, description: "Date it stopped operating, if any."}
+      - {name: legal_start, type: date, nullable: true, description: "Legal start date, where recorded."}
+      - {name: legal_end, type: date, nullable: true, description: "Legal end date, where recorded (e.g. 30 June 2026 for a trust merged on 1 July)."}
+      - {name: closed_on, type: date, nullable: true, description: "Earliest of operational_end and legal_end."}
+      - {name: postcode, type: string, nullable: true, description: "Postcode of the main address."}
+      - {name: address_line1, type: string, nullable: true, description: "First line of the address."}
+      - {name: town, type: string, nullable: true, description: "Town."}
+      - {name: operated_by, type: string, nullable: true, description: "ODS code of the operating organisation, for sites."}
+      - {name: successors, type: "array of string", description: "ODS codes of successor organisations recorded by ODS."}
+      - {name: predecessors, type: "array of string", description: "ODS codes of predecessor organisations recorded by ODS."}
+      - {name: curated_lineage, type: "array of lineage link", link: lineage_link, nullable: true, description: "Links ODS does not record (for example a change of operator issuing new codes), confirmed with evidence. Single-organisation endpoint only."}
+
+  - id: lineage_link
+    title: The lineage link
+    summary: A confirmed link between an old and a new organisation code that ODS does not record as a succession.
+    returned_by: ["organisation.curated_lineage"]
+    example: {path: /v1/organisations/NTP15, params: {}, pick: data.curated_lineage.0}
+    fields:
+      - {name: from, type: string, description: "Code that stopped reporting."}
+      - {name: to, type: string, description: "Code that carries its activity from the effective date."}
+      - {name: effective, type: date, description: "First month the new code applies."}
+      - {name: evidence, type: string, description: "Why the link is believed to be correct."}
+
+  - id: submission_record
+    title: The submission record
+    summary: >
+      Which providers submitted RTT data for a month, why any that submitted last month did
+      not, and which NHS trusts have been missing for longer.
+    returned_by: ["/v1/rtt/submissions"]
+    example: {path: /v1/rtt/submissions, params: {}, pick: data.-1}
+    fields:
+      - {name: period, type: date, description: "Reporting month."}
+      - {name: providers_submitting, type: integer, description: "Number of providers with any data for the month."}
+      - {name: new_non_submitters, type: "array of non-submitter", link: non_submitter, nullable: true, description: "Providers that submitted last month but not this month. Null when the previous month is not loaded."}
+      - {name: persistent_non_submitters, type: "array of persistent non-submitter", link: persistent_non_submitter, description: "NHS trusts missing for two months or more, not closed and not carried by a submitting successor."}
+
+  - id: non_submitter
+    title: The non-submitter
+    summary: A provider that submitted last month but not this month, with the likely reason.
+    returned_by: ["submission_record.new_non_submitters"]
+    example: {path: /v1/rtt/submissions, params: {}, pick: data.-1.new_non_submitters.0}
+    fields:
+      - {name: code, type: string, description: "ODS code."}
+      - {name: name, type: string, description: "Name as last published."}
+      - {name: reason, type: string, values: [merged_or_recoded, closed, not_submitting], description: "merged_or_recoded: its successor is submitting. closed: ODS records it as closed. not_submitting: usually a missed submission."}
+      - {name: successor, type: string, nullable: true, description: "Successor code, when merged or recoded."}
+      - {name: closed_on, type: date, nullable: true, description: "Closure date from ODS, when closed."}
+
+  - id: persistent_non_submitter
+    title: The persistent non-submitter
+    summary: An NHS trust that has not submitted for two months or more.
+    returned_by: ["submission_record.persistent_non_submitters"]
+    example: {path: /v1/rtt/submissions, params: {}, pick: data.-1.persistent_non_submitters.0}
+    fields:
+      - {name: code, type: string, description: "ODS code."}
+      - {name: name, type: string, description: "Name as last published."}
+      - {name: last_reported, type: date, description: "Last month with data."}
+
+  - id: dataset_summary
+    title: The dataset summary
+    summary: A dataset available from the API. The full entry is at /v1/datasets/{dataset_id}.
+    returned_by: ["/v1/datasets"]
+    example: {path: /v1/datasets, params: {}, pick: data.0}
+    fields:
+      - {name: id, type: string, description: "Dataset id."}
+      - {name: title, type: string, description: "Title."}
+      - {name: status, type: string, values: [stable, draft], description: "draft: definitions or coverage may still change."}
+      - {name: frequency, type: string, description: "How often the source is published."}
+      - {name: summary, type: string, description: "Short description."}
+
+# Error examples are real responses requested at docs build time.
+errors:
+  - status: 404
+    title: Not found
+    when: >
+      The dataset or organisation does not exist, or nothing matches the filters. When the
+      organisation exists but has no data for the requested month, the message says so: it
+      may not have submitted, or may have been recoded.
+    action: Check the code with /v1/organisations, or see /v1/rtt/submissions for that month.
+    examples:
+      - {path: /v1/rtt/metrics, params: {view: provider, org: RX1, period: "2026-09-01"}}
+      - {path: /v1/organisations/XXX, params: {}}
+  - status: 422
+    title: Invalid request
+    when: >
+      A parameter is not valid: an unknown measure id, a value outside the allowed list, or a
+      badly formed date. Unknown measures return a message; other validation errors return a
+      list of problems, each with the parameter's location and a message.
+    action: Correct the parameter. Allowed values are listed on the Endpoints page.
+    examples:
+      - {path: /v1/rtt/metrics, params: {measures: waiting_list}}
+      - {path: /v1/rtt/metrics, params: {view: trust}}
+  - status: 429
+    title: Too many requests (planned)
+    when: Anonymous and per-key rate limits will return 429 with a Retry-After header.
+    action: Wait for the number of seconds in Retry-After, or use an API key.
+    examples: []
+  - status: 503
+    title: Data not available
+    when: The service is running but its data has not been loaded (for example during setup).
+    action: Retry later.
+    examples: []

@@ -18,14 +18,23 @@ def test_build_docs(tmp_path):
                   "sector": ["nhs_trust"]}).write_parquet(
         processed / "ods" / "organisations.parquet")
     files = {p.relative_to(out).as_posix() for p in build_docs(out, processed_dir=processed)}
-    assert {"index.html", "reference.html", "datasets.html", "openapi.json", "llms.txt",
+    assert {"index.html", "reference.html", "objects.html", "errors.html", "datasets.html",
+            "openapi.json", "llms.txt",
             "datasets/rtt.html", "datasets/organisations.html", "assets/docs.css"} <= files
 
     overview = (out / "index.html").read_text()
     assert overview.count("<strong>Response</strong>") == 3  # one per quick-start example
     assert "&quot;org_code&quot;: &quot;RJ1&quot;" in overview
+    objects = (out / "objects.html").read_text()
+    for anchor in ("measure_row", "meta", "organisation", "submission_record", "non_submitter"):
+        assert f"id='{anchor}'" in objects
+    assert "field-pct_within_18_weeks" in objects        # measure fields from the catalogue
+    errors = (out / "errors.html").read_text()
+    assert "id='e404'" in errors and "id='e422'" in errors
+    assert "Response · 422" in errors                   # a real error response was rendered
     reference = (out / "reference.html").read_text()
-    assert "/v1/rtt/metrics" in reference and "Example" in reference  # real example rendered
+    assert "class=split" in reference and "objects.html#measure_row" in reference
+    assert "/v1/rtt/metrics" in reference and ">Response<" in reference  # real example rendered
     assert json.loads((out / "openapi.json").read_text())["paths"]["/v1/rtt/metrics"]
     llms = (out / "llms.txt").read_text()
     assert "`waiting_list_total`" in llms and "meta.attribution" in llms

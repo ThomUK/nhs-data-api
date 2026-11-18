@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Objects · secondthursday</title>
+<meta name="description" content="Documentation for an API serving public NHS England statistics with definitions, sources and caveats.">
+<link rel="stylesheet" href="assets/docs.css"></head><body>
+<header class="top"><div class="brand">secondthursday<small>docs</small></div>
+<nav aria-label="Documentation"><a href="index.html">Overview</a><a href="reference.html">Endpoints</a><a href="objects.html" aria-current=page>Objects</a><a href="errors.html">Errors</a><a href="datasets.html">Datasets &amp; measures</a><a href="llms.txt">llms.txt</a></nav></header>
+<main class=wide><h1>Objects</h1><p class=lede>The shapes the API returns. Each field lists its type and whether it can be null. Examples are real responses (long text shortened).</p><ul class=small><li><a href='#measure_row'>The measure row</a></li><li><a href='#meta'>The meta object</a></li><li><a href='#caveat'>The caveat</a></li><li><a href='#measure_definition'>The measure definition</a></li><li><a href='#organisation'>The organisation</a></li><li><a href='#lineage_link'>The lineage link</a></li><li><a href='#submission_record'>The submission record</a></li><li><a href='#non_submitter'>The non-submitter</a></li><li><a href='#persistent_non_submitter'>The persistent non-submitter</a></li><li><a href='#dataset_summary'>The dataset summary</a></li></ul><section class=split id='measure_row'><div><h2>The measure row</h2><p>One organisation (or area) in one month and one specialty, with the requested measures as columns. Which organisation a row describes depends on the view: a provider, an ICB&#x27;s providers, an ICB&#x27;s residents, or England.</p><p class=small>Returned by: <a href='reference.html#v1-rtt-metrics'><code>/v1/rtt/metrics</code></a></p><div class=label>Fields</div><div class=fields><div class=field id='field-period'><span class=fname>period</span><span class=ftype>date</span><p>Reporting month, as the first day of the month (ISO 8601).</p></div><div class=field id='field-org_code'><span class=fname>org_code</span><span class=ftype>string</span><p>ODS code of the organisation or area. ENG for England; NHSE for care commissioned directly by NHS England (population views).</p></div><div class=field id='field-org_name'><span class=fname>org_name</span><span class=ftype>string</span><p>Name as published for that month.</p></div><div class=field id='field-treatment_function_code'><span class=fname>treatment_function_code</span><span class=ftype>string</span><p>Specialty. C_999 is all specialties combined. Codes are listed on the RTT dataset page.</p></div><div class=field id='field-waiting_list_total'><span class=fname>waiting_list_total</span><span class=ftype>integer</span><p><strong>Total waiting list (incomplete pathways).</strong> Patients waiting to start treatment at month end. Sum of Part_2 across all weekly bands.</p></div><div class=field id='field-waiting_list_dta'><span class=fname>waiting_list_dta</span><span class=ftype>integer</span><p><strong>Waiting with a decision to admit.</strong> Incomplete pathways where a decision to admit for treatment has been made (Part_2A).</p></div><div class=field id='field-pct_waiting_list_dta'><span class=fname>pct_waiting_list_dta</span><span class=ftype>number · nullable</span><p><strong>Share of the waiting list awaiting admission.</strong> waiting_list_dta / waiting_list_total x 100.</p></div><div class=field id='field-pct_within_18_weeks'><span class=fname>pct_within_18_weeks</span><span class=ftype>number · nullable</span><p><strong>Percentage waiting 18 weeks or less.</strong> Part_2 patients in bands with weeks_upper &lt;= 18, divided by waiting_list_total, x 100.</p></div><div class=field id='field-waiting_over_18_weeks'><span class=fname>waiting_over_18_weeks</span><span class=ftype>integer</span><p><strong>Waiting more than 18 weeks.</strong> Part_2 patients in bands with weeks_lower &gt;= 18.</p></div><div class=field id='field-waiting_over_52_weeks'><span class=fname>waiting_over_52_weeks</span><span class=ftype>integer</span><p><strong>Waiting more than 52 weeks.</strong> Part_2 patients in bands with weeks_lower &gt;= 52.</p></div><div class=field id='field-waiting_over_65_weeks'><span class=fname>waiting_over_65_weeks</span><span class=ftype>integer</span><p><strong>Waiting more than 65 weeks.</strong> Part_2 patients in bands with weeks_lower &gt;= 65.</p></div><div class=field id='field-waiting_over_78_weeks'><span class=fname>waiting_over_78_weeks</span><span class=ftype>integer</span><p><strong>Waiting more than 78 weeks.</strong> Part_2 patients in bands with weeks_lower &gt;= 78.</p></div><div class=field id='field-waiting_over_104_weeks'><span class=fname>waiting_over_104_weeks</span><span class=ftype>integer</span><p><strong>Waiting more than 104 weeks.</strong> Part_2 patients in the open-ended top band (more than 104 weeks).</p></div><div class=field id='field-median_wait_weeks'><span class=fname>median_wait_weeks</span><span class=ftype>number · nullable</span><p><strong>Median wait (weeks).</strong> 50th percentile of the Part_2 waiting-time distribution, by linear interpolation within the weekly band containing the median patient. Same method as NHS England (matched exactly for all providers and specialties, September 2026). Rounded to 1 decimal place.</p></div><div class=field id='field-p92_wait_weeks'><span class=fname>p92_wait_weeks</span><span class=ftype>number · nullable</span><p><strong>92nd percentile wait (weeks).</strong> 92nd percentile of the Part_2 waiting-time distribution, interpolated as for the median. If it falls in the open-ended top band, the band&#x27;s lower bound (104) is returned. Same method as NHS England (matched exactly, September 2026). Rounded to 1 decimal place.</p></div><div class=field id='field-approaching_52_weeks'><span class=fname>approaching_52_weeks</span><span class=ftype>integer</span><p><strong>Approaching 52 weeks.</strong> Part_2 patients waiting more than 40 and up to 52 weeks. Will exceed 52 weeks within 12 weeks unless treated or removed.</p></div><div class=field id='field-clock_starts'><span class=fname>clock_starts</span><span class=ftype>integer</span><p><strong>New RTT periods (clock starts).</strong> Pathways starting in the month (Part_3). Published as a total with no waiting-time split.</p></div><div class=field id='field-clock_stops_admitted'><span class=fname>clock_stops_admitted</span><span class=ftype>integer</span><p><strong>Completed pathways, admitted.</strong> Pathways ending with admission for treatment in the month (Part_1A), including unknown clock start.</p></div><div class=field id='field-clock_stops_non_admitted'><span class=fname>clock_stops_non_admitted</span><span class=ftype>integer</span><p><strong>Completed pathways, non-admitted.</strong> Pathways ending in the month without admission (Part_1B), including unknown clock start.</p></div><div class=field id='field-clock_stops_total'><span class=fname>clock_stops_total</span><span class=ftype>integer</span><p><strong>Completed pathways, total.</strong> clock_stops_admitted + clock_stops_non_admitted.</p></div><div class=field id='field-pct_completed_within_18_weeks_admitted'><span class=fname>pct_completed_within_18_weeks_admitted</span><span class=ftype>number · nullable</span><p><strong>Admitted pathways completed within 18 weeks.</strong> Part_1A patients in bands with weeks_upper &lt;= 18, divided by Part_1A with a known clock start, x 100.</p></div><div class=field id='field-pct_completed_within_18_weeks_non_admitted'><span class=fname>pct_completed_within_18_weeks_non_admitted</span><span class=ftype>number · nullable</span><p><strong>Non-admitted pathways completed within 18 weeks.</strong> As above for Part_1B.</p></div><div class=field id='field-median_wait_completed_admitted_weeks'><span class=fname>median_wait_completed_admitted_weeks</span><span class=ftype>number · nullable</span><p><strong>Median wait of admitted completed pathways (weeks).</strong> Median of the Part_1A distribution (known clock starts), interpolated within weekly bands.</p></div><div class=field id='field-median_wait_completed_non_admitted_weeks'><span class=fname>median_wait_completed_non_admitted_weeks</span><span class=ftype>number · nullable</span><p><strong>Median wait of non-admitted completed pathways (weeks).</strong> Median of the Part_1B distribution (known clock starts), interpolated within weekly bands.</p></div><div class=field id='field-waiting_list_change_mom'><span class=fname>waiting_list_change_mom</span><span class=ftype>integer · nullable</span><p><strong>Change in waiting list since previous month.</strong> waiting_list_total minus the previous month&#x27;s, as published. Null if the previous month is not loaded or the organisation/specialty does not appear in it. Null when the previous month is not available.</p></div><div class=field id='field-waiting_over_52_weeks_change_mom'><span class=fname>waiting_over_52_weeks_change_mom</span><span class=ftype>integer · nullable</span><p><strong>Change in 52+ week waiters since previous month.</strong> waiting_over_52_weeks minus the previous month&#x27;s, as published. Null when the previous month is not available.</p></div><div class=field id='field-waiting_list_change_mom_like_for_like'><span class=fname>waiting_list_change_mom_like_for_like</span><span class=ftype>integer · nullable</span><p><strong>Change in waiting list since previous month, like-for-like providers.</strong> Change in waiting_list_total counting only providers that submitted in both months. Null when the previous month is not available.</p></div><div class=field id='field-waiting_over_52_weeks_change_mom_like_for_like'><span class=fname>waiting_over_52_weeks_change_mom_like_for_like</span><span class=ftype>integer · nullable</span><p><strong>Change in 52+ week waiters since previous month, like-for-like providers.</strong> Change in waiting_over_52_weeks counting only providers that submitted in both months. Null when the previous month is not available.</p></div><div class=field id='field-unreported_removals'><span class=fname>unreported_removals</span><span class=ftype>integer · nullable</span><p><strong>Derived unreported completed pathways and removals.</strong> Previous month&#x27;s waiting list + clock_starts - clock_stops_total - this month&#x27;s waiting list, from published totals. Matches NHS England&#x27;s &quot;Derived unreported completed pathways and removals&quot; (without estimates). Null when the previous month is not available.</p></div><div class=field id='field-unreported_removals_like_for_like'><span class=fname>unreported_removals_like_for_like</span><span class=ftype>integer · nullable <span class='chip experimental'>experimental</span></span><p><strong>Derived unreported completed pathways and removals, like-for-like (experimental).</strong> Previous month&#x27;s waiting list + clock_starts - clock_stops_total - this month&#x27;s waiting list, counting only providers that submitted in both months. A positive value means the list fell by more than recorded treatment explains. Null when the previous month is not available.</p></div><div class=field id='field-providers_submitting'><span class=fname>providers_submitting</span><span class=ftype>integer</span><p><strong>Providers submitting.</strong> Number of providers with any rows in the group for the month.</p></div></div></div><div class=code><div class=label>Example</div><pre><code class="json">{
+  &quot;period&quot;: &quot;2026-09-01&quot;,
+  &quot;org_code&quot;: &quot;RJ1&quot;,
+  &quot;org_name&quot;: &quot;GUY&#x27;S AND ST THOMAS&#x27; NHS FOUNDATION TRUST&quot;,
+  &quot;treatment_function_code&quot;: &quot;C_999&quot;,
+  &quot;waiting_list_total&quot;: 107437,
+  &quot;waiting_list_dta&quot;: 22754,
+  &quot;pct_waiting_list_dta&quot;: 21.2,
+  &quot;pct_within_18_weeks&quot;: 67.3,
+  &quot;waiting_over_18_weeks&quot;: 35112,
+  &quot;waiting_over_52_weeks&quot;: 1063,
+  &quot;waiting_over_65_weeks&quot;: 162,
+  &quot;waiting_over_78_weeks&quot;: 69,
+  &quot;waiting_over_104_weeks&quot;: 26,
+  &quot;median_wait_weeks&quot;: 11.6,
+  &quot;p92_wait_weeks&quot;: 36.2,
+  &quot;approaching_52_weeks&quot;: 5380,
+  &quot;clock_starts&quot;: 31295,
+  &quot;clock_stops_admitted&quot;: 6213,
+  &quot;clock_stops_non_admitted&quot;: 21138,
+  &quot;clock_stops_total&quot;: 27351,
+  &quot;pct_completed_within_18_weeks_admitted&quot;: 61.0,
+  &quot;pct_completed_within_18_weeks_non_admitted&quot;: 69.7,
+  &quot;median_wait_completed_admitted_weeks&quot;: 12.5,
+  &quot;median_wait_completed_non_admitted_weeks&quot;: 10.7,
+  &quot;waiting_list_change_mom&quot;: -1710,
+  &quot;waiting_over_52_weeks_change_mom&quot;: 152,
+  &quot;waiting_list_change_mom_like_for_like&quot;: -1710,
+  &quot;waiting_over_52_weeks_change_mom_like_for_like&quot;: 152,
+  &quot;unreported_removals&quot;: 5654,
+  &quot;providers_submitting&quot;: 1
+}</code></pre></div></section><section class=split id='meta'><div><h2>The meta object</h2><p>Returned with every successful response. It says where the data came from, how to cite it, what caveats apply, and defines every measure returned, so a response can be used on its own.</p><p class=small>Returned by: <code>all endpoints</code></p><div class=label>Fields</div><div class=fields><div class=field id='field-dataset'><span class=fname>dataset</span><span class=ftype>string</span><p>Dataset id, e.g. rtt or organisations.</p></div><div class=field id='field-title'><span class=fname>title</span><span class=ftype>string</span><p>Dataset title.</p></div><div class=field id='field-source_page'><span class=fname>source_page</span><span class=ftype>url</span><p>The publisher&#x27;s page for the source publication.</p></div><div class=field id='field-licence'><span class=fname>licence</span><span class=ftype>string</span><p>Licence of the source data (Open Government Licence v3.0).</p></div><div class=field id='field-attribution'><span class=fname>attribution</span><span class=ftype>string</span><p>Text to quote when citing the figures. Attribution is a condition of the licence.</p></div><div class=field id='field-caveats'><span class=fname>caveats</span><span class=ftype><a href='objects.html#caveat'>array of caveat</a></span><p>Known limitations that apply to the dataset. Pass them on with the figures.</p></div><div class=field id='field-measures'><span class=fname>measures</span><span class=ftype><a href='objects.html#measure_definition'>map of measure definition</a> · nullable</span><p>Definitions of the measures in this response, keyed by measure id. Present on measure endpoints.</p></div><div class=field id='field-view'><span class=fname>view</span><span class=ftype>string · nullable</span><p>The view used (measure endpoints).</p></div><div class=field id='field-rows'><span class=fname>rows</span><span class=ftype>integer · nullable</span><p>Number of rows matching the request, before any truncation.</p></div><div class=field id='field-truncated'><span class=fname>truncated</span><span class=ftype>boolean · nullable</span><p>True when more rows matched than were returned (the limit is 1,000). Narrow the request.</p></div></div></div><div class=code><div class=label>Example</div><pre><code class="json">{
+  &quot;dataset&quot;: &quot;rtt&quot;,
+  &quot;title&quot;: &quot;Consultant-led Referral to Treatment (RTT) Waiting Times&quot;,
+  &quot;source_page&quot;: &quot;https://www.england.nhs.uk/statistics/statistical-work-areas/rtt-waiting-times/&quot;,
+  &quot;licence&quot;: &quot;Open Government Licence v3.0&quot;,
+  &quot;attribution&quot;: &quot;Source: NHS England, Consultant-led Referral to Treatment Waiting Times. Contains public sector information licensed under the Open Government Licence v3.0.&quot;,
+  &quot;caveats&quot;: [
+    {
+      &quot;id&quot;: &quot;rtt-english-commissioners&quot;,
+      &quot;applies_to&quot;: &quot;all&quot;,
+      &quot;text&quot;: &quot;All measures exclude patients commissioned outside England (commissioner code NONC: Wales, Scotland, Northern Ireland, overseas), matching NHS England&#x27;s publ…&quot;
+    },
+    &quot;… 5 more&quot;
+  ],
+  &quot;measures&quot;: {
+    &quot;waiting_list_total&quot;: {
+      &quot;label&quot;: &quot;Total waiting list (incomplete pathways)&quot;,
+      &quot;unit&quot;: &quot;count&quot;,
+      &quot;definition&quot;: &quot;Patients waiting to start treatment at month end. Sum of Part_2 across all weekly bands.&quot;,
+      &quot;caveat&quot;: &quot;Sum of submitted data only. NHS England&#x27;s national headline may include estimates for organisations that did not submit, so it can be higher.\n&quot;,
+      &quot;status&quot;: &quot;stable&quot;
+    },
+    &quot;…&quot;: &quot;1 more measure definitions&quot;
+  },
+  &quot;view&quot;: &quot;provider&quot;,
+  &quot;rows&quot;: 1,
+  &quot;truncated&quot;: false
+}</code></pre></div></section><section class=split id='caveat'><div><h2>The caveat</h2><p>A known limitation of the data, returned in meta.caveats.</p><p class=small>Returned by: <code>meta.caveats</code></p><div class=label>Fields</div><div class=fields><div class=field id='field-id'><span class=fname>id</span><span class=ftype>string</span><p>Stable identifier, e.g. rtt-no-estimates.</p></div><div class=field id='field-applies_to'><span class=fname>applies_to</span><span class=ftype>string</span><p>Scope of the caveat; all means the whole dataset.</p></div><div class=field id='field-text'><span class=fname>text</span><span class=ftype>string</span><p>Plain-English explanation.</p></div></div></div><div class=code><div class=label>Example</div><pre><code class="json">{
+  &quot;id&quot;: &quot;rtt-english-commissioners&quot;,
+  &quot;applies_to&quot;: &quot;all&quot;,
+  &quot;text&quot;: &quot;All measures exclude patients commissioned outside England (commissioner code NONC: Wales, Scotland, Northern Ireland, overseas), matching NHS England&#x27;s publ…&quot;
+}</code></pre></div></section><section class=split id='measure_definition'><div><h2>The measure definition</h2><p>How a measure is defined, returned in meta.measures. The same definitions appear on the dataset pages.</p><p class=small>Returned by: <code>meta.measures</code></p><div class=label>Fields</div><div class=fields><div class=field id='field-label'><span class=fname>label</span><span class=ftype>string</span><p>Short human-readable name.</p></div><div class=field id='field-unit'><span class=fname>unit</span><span class=ftype>string</span><p>Unit of the values.</p><div class=muted>One of: <code>count</code>, <code>percent</code>, <code>weeks</code></div></div><div class=field id='field-definition'><span class=fname>definition</span><span class=ftype>string</span><p>Exactly how the measure is calculated.</p></div><div class=field id='field-status'><span class=fname>status</span><span class=ftype>string</span><p>experimental measures are only returned when requested with include_experimental=true.</p><div class=muted>One of: <code>stable</code>, <code>draft</code>, <code>experimental</code></div></div><div class=field id='field-standard'><span class=fname>standard</span><span class=ftype>string · nullable</span><p>Related operational standard, e.g. the 92% 18-week standard.</p></div><div class=field id='field-caveat'><span class=fname>caveat</span><span class=ftype>string · nullable</span><p>Measure-specific caveat.</p></div></div></div><div class=code><div class=label>Example</div><pre><code class="json">{
+  &quot;label&quot;: &quot;Percentage waiting 18 weeks or less&quot;,
+  &quot;unit&quot;: &quot;percent&quot;,
+  &quot;definition&quot;: &quot;Part_2 patients in bands with weeks_upper &lt;= 18, divided by waiting_list_total, x 100.&quot;,
+  &quot;standard&quot;: &quot;NHS Constitution operational standard of 92%.&quot;,
+  &quot;status&quot;: &quot;stable&quot;
+}</code></pre></div></section><section class=split id='organisation'><div><h2>The organisation</h2><p>An organisation that appears in the statistics, from NHS England&#x27;s Organisation Data Service (ODS), with the links used to follow it through mergers and recodes.</p><p class=small>Returned by: <a href='reference.html#v1-organisations'><code>/v1/organisations</code></a>, <a href='reference.html#v1-organisations-org_code'><code>/v1/organisations/{org_code}</code></a></p><div class=label>Fields</div><div class=fields><div class=field id='field-org_code'><span class=fname>org_code</span><span class=ftype>string</span><p>ODS code.</p></div><div class=field id='field-name'><span class=fname>name</span><span class=ftype>string</span><p>Name in the ODS snapshot.</p></div><div class=field id='field-sector'><span class=fname>sector</span><span class=ftype>string</span><p>Derived from the ODS primary role.</p><div class=muted>One of: <code>nhs_trust</code>, <code>independent_sector</code>, <code>commissioner</code>, <code>other</code></div></div><div class=field id='field-primary_role'><span class=fname>primary_role</span><span class=ftype>string</span><p>ODS primary role code, e.g. RO197 (NHS trust).</p></div><div class=field id='field-primary_role_name'><span class=fname>primary_role_name</span><span class=ftype>string</span><p>Name of the primary role.</p></div><div class=field id='field-status'><span class=fname>status</span><span class=ftype>string</span><p>ODS status (Active or Inactive).</p></div><div class=field id='field-operational_start'><span class=fname>operational_start</span><span class=ftype>date · nullable</span><p>Date the organisation became operational.</p></div><div class=field id='field-operational_end'><span class=fname>operational_end</span><span class=ftype>date · nullable</span><p>Date it stopped operating, if any.</p></div><div class=field id='field-legal_start'><span class=fname>legal_start</span><span class=ftype>date · nullable</span><p>Legal start date, where recorded.</p></div><div class=field id='field-legal_end'><span class=fname>legal_end</span><span class=ftype>date · nullable</span><p>Legal end date, where recorded (e.g. 30 June 2026 for a trust merged on 1 July).</p></div><div class=field id='field-closed_on'><span class=fname>closed_on</span><span class=ftype>date · nullable</span><p>Earliest of operational_end and legal_end.</p></div><div class=field id='field-postcode'><span class=fname>postcode</span><span class=ftype>string · nullable</span><p>Postcode of the main address.</p></div><div class=field id='field-address_line1'><span class=fname>address_line1</span><span class=ftype>string · nullable</span><p>First line of the address.</p></div><div class=field id='field-town'><span class=fname>town</span><span class=ftype>string · nullable</span><p>Town.</p></div><div class=field id='field-operated_by'><span class=fname>operated_by</span><span class=ftype>string · nullable</span><p>ODS code of the operating organisation, for sites.</p></div><div class=field id='field-successors'><span class=fname>successors</span><span class=ftype>array of string</span><p>ODS codes of successor organisations recorded by ODS.</p></div><div class=field id='field-predecessors'><span class=fname>predecessors</span><span class=ftype>array of string</span><p>ODS codes of predecessor organisations recorded by ODS.</p></div><div class=field id='field-curated_lineage'><span class=fname>curated_lineage</span><span class=ftype><a href='objects.html#lineage_link'>array of lineage link</a> · nullable</span><p>Links ODS does not record (for example a change of operator issuing new codes), confirmed with evidence. Single-organisation endpoint only.</p></div></div></div><div class=code><div class=label>Example</div><pre><code class="json">{
+  &quot;org_code&quot;: &quot;RA7&quot;,
+  &quot;name&quot;: &quot;BRISTOL NHS FOUNDATION TRUST&quot;,
+  &quot;sector&quot;: &quot;nhs_trust&quot;,
+  &quot;primary_role&quot;: &quot;RO197&quot;,
+  &quot;primary_role_name&quot;: &quot;NHS TRUST&quot;,
+  &quot;status&quot;: &quot;Active&quot;,
+  &quot;operational_start&quot;: &quot;1991-04-01&quot;,
+  &quot;operational_end&quot;: null,
+  &quot;legal_start&quot;: null,
+  &quot;legal_end&quot;: null,
+  &quot;closed_on&quot;: null,
+  &quot;postcode&quot;: &quot;BS1 3NU&quot;,
+  &quot;address_line1&quot;: &quot;TRUST HEADQUARTERS&quot;,
+  &quot;town&quot;: &quot;BRISTOL&quot;,
+  &quot;operated_by&quot;: null,
+  &quot;successors&quot;: [],
+  &quot;predecessors&quot;: [
+    &quot;RA3&quot;,
+    &quot;RVJ&quot;
+  ],
+  &quot;curated_lineage&quot;: []
+}</code></pre></div></section><section class=split id='lineage_link'><div><h2>The lineage link</h2><p>A confirmed link between an old and a new organisation code that ODS does not record as a succession.</p><p class=small>Returned by: <code>organisation.curated_lineage</code></p><div class=label>Fields</div><div class=fields><div class=field id='field-from'><span class=fname>from</span><span class=ftype>string</span><p>Code that stopped reporting.</p></div><div class=field id='field-to'><span class=fname>to</span><span class=ftype>string</span><p>Code that carries its activity from the effective date.</p></div><div class=field id='field-effective'><span class=fname>effective</span><span class=ftype>date</span><p>First month the new code applies.</p></div><div class=field id='field-evidence'><span class=fname>evidence</span><span class=ftype>string</span><p>Why the link is believed to be correct.</p></div></div></div><div class=code><div class=label>Example</div><pre><code class="json">{
+  &quot;from&quot;: &quot;NTP15&quot;,
+  &quot;to&quot;: &quot;F0U7A&quot;,
+  &quot;effective&quot;: &quot;2026-09-01&quot;,
+  &quot;evidence&quot;: &quot;Same site in ODS (King George Hospital, IG3 8YY); operator changed from Practice Plus Group (NTP) to N1Y5A. Old code last reports August 2026, new code first…&quot;
+}</code></pre></div></section><section class=split id='submission_record'><div><h2>The submission record</h2><p>Which providers submitted RTT data for a month, why any that submitted last month did not, and which NHS trusts have been missing for longer.</p><p class=small>Returned by: <a href='reference.html#v1-rtt-submissions'><code>/v1/rtt/submissions</code></a></p><div class=label>Fields</div><div class=fields><div class=field id='field-period'><span class=fname>period</span><span class=ftype>date</span><p>Reporting month.</p></div><div class=field id='field-providers_submitting'><span class=fname>providers_submitting</span><span class=ftype>integer</span><p>Number of providers with any data for the month.</p></div><div class=field id='field-new_non_submitters'><span class=fname>new_non_submitters</span><span class=ftype><a href='objects.html#non_submitter'>array of non-submitter</a> · nullable</span><p>Providers that submitted last month but not this month. Null when the previous month is not loaded.</p></div><div class=field id='field-persistent_non_submitters'><span class=fname>persistent_non_submitters</span><span class=ftype><a href='objects.html#persistent_non_submitter'>array of persistent non-submitter</a></span><p>NHS trusts missing for two months or more, not closed and not carried by a submitting successor.</p></div></div></div><div class=code><div class=label>Example</div><pre><code class="json">{
+  &quot;period&quot;: &quot;2026-09-01&quot;,
+  &quot;providers_submitting&quot;: 526,
+  &quot;new_non_submitters&quot;: [
+    {
+      &quot;code&quot;: &quot;D1V5N&quot;,
+      &quot;name&quot;: &quot;ACES BOLTON&quot;,
+      &quot;reason&quot;: &quot;not_submitting&quot;,
+      &quot;successor&quot;: null,
+      &quot;closed_on&quot;: null
+    },
+    {
+      &quot;code&quot;: &quot;E6F9I&quot;,
+      &quot;name&quot;: &quot;ACES BRADFORD&quot;,
+      &quot;reason&quot;: &quot;not_submitting&quot;,
+      &quot;successor&quot;: null,
+      &quot;closed_on&quot;: null
+    },
+    {
+      &quot;code&quot;: &quot;M2Y6D&quot;,
+      &quot;name&quot;: &quot;PRACTICE PLUS GROUP HOSPITAL BIRMINGHAM&quot;,
+      &quot;reason&quot;: &quot;not_submitting&quot;,
+      &quot;successor&quot;: null,
+      &quot;closed_on&quot;: null
+    },
+    &quot;… 10 more&quot;
+  ],
+  &quot;persistent_non_submitters&quot;: [
+    {
+      &quot;code&quot;: &quot;RA9&quot;,
+      &quot;name&quot;: &quot;TORBAY AND SOUTH DEVON NHS FOUNDATION TRUST&quot;,
+      &quot;last_reported&quot;: &quot;2026-03-01&quot;
+    },
+    {
+      &quot;code&quot;: &quot;RHQ&quot;,
+      &quot;name&quot;: &quot;SHEFFIELD TEACHING HOSPITALS NHS FOUNDATION TRUST&quot;,
+      &quot;last_reported&quot;: &quot;2025-06-01&quot;
+    },
+    {
+      &quot;code&quot;: &quot;RK9&quot;,
+      &quot;name&quot;: &quot;UNIVERSITY HOSPITALS PLYMOUTH NHS TRUST&quot;,
+      &quot;last_reported&quot;: &quot;2026-06-01&quot;
+    },
+    &quot;… 3 more&quot;
+  ]
+}</code></pre></div></section><section class=split id='non_submitter'><div><h2>The non-submitter</h2><p>A provider that submitted last month but not this month, with the likely reason.</p><p class=small>Returned by: <code>submission_record.new_non_submitters</code></p><div class=label>Fields</div><div class=fields><div class=field id='field-code'><span class=fname>code</span><span class=ftype>string</span><p>ODS code.</p></div><div class=field id='field-name'><span class=fname>name</span><span class=ftype>string</span><p>Name as last published.</p></div><div class=field id='field-reason'><span class=fname>reason</span><span class=ftype>string</span><p>merged_or_recoded: its successor is submitting. closed: ODS records it as closed. not_submitting: usually a missed submission.</p><div class=muted>One of: <code>merged_or_recoded</code>, <code>closed</code>, <code>not_submitting</code></div></div><div class=field id='field-successor'><span class=fname>successor</span><span class=ftype>string · nullable</span><p>Successor code, when merged or recoded.</p></div><div class=field id='field-closed_on'><span class=fname>closed_on</span><span class=ftype>date · nullable</span><p>Closure date from ODS, when closed.</p></div></div></div><div class=code><div class=label>Example</div><pre><code class="json">{
+  &quot;code&quot;: &quot;D1V5N&quot;,
+  &quot;name&quot;: &quot;ACES BOLTON&quot;,
+  &quot;reason&quot;: &quot;not_submitting&quot;,
+  &quot;successor&quot;: null,
+  &quot;closed_on&quot;: null
+}</code></pre></div></section><section class=split id='persistent_non_submitter'><div><h2>The persistent non-submitter</h2><p>An NHS trust that has not submitted for two months or more.</p><p class=small>Returned by: <code>submission_record.persistent_non_submitters</code></p><div class=label>Fields</div><div class=fields><div class=field id='field-code'><span class=fname>code</span><span class=ftype>string</span><p>ODS code.</p></div><div class=field id='field-name'><span class=fname>name</span><span class=ftype>string</span><p>Name as last published.</p></div><div class=field id='field-last_reported'><span class=fname>last_reported</span><span class=ftype>date</span><p>Last month with data.</p></div></div></div><div class=code><div class=label>Example</div><pre><code class="json">{
+  &quot;code&quot;: &quot;RA9&quot;,
+  &quot;name&quot;: &quot;TORBAY AND SOUTH DEVON NHS FOUNDATION TRUST&quot;,
+  &quot;last_reported&quot;: &quot;2026-03-01&quot;
+}</code></pre></div></section><section class=split id='dataset_summary'><div><h2>The dataset summary</h2><p>A dataset available from the API. The full entry is at /v1/datasets/{dataset_id}.</p><p class=small>Returned by: <a href='reference.html#v1-datasets'><code>/v1/datasets</code></a></p><div class=label>Fields</div><div class=fields><div class=field id='field-id'><span class=fname>id</span><span class=ftype>string</span><p>Dataset id.</p></div><div class=field id='field-title'><span class=fname>title</span><span class=ftype>string</span><p>Title.</p></div><div class=field id='field-status'><span class=fname>status</span><span class=ftype>string</span><p>draft: definitions or coverage may still change.</p><div class=muted>One of: <code>stable</code>, <code>draft</code></div></div><div class=field id='field-frequency'><span class=fname>frequency</span><span class=ftype>string</span><p>How often the source is published.</p></div><div class=field id='field-summary'><span class=fname>summary</span><span class=ftype>string</span><p>Short description.</p></div></div></div><div class=code><div class=label>Example</div><pre><code class="json">{
+  &quot;id&quot;: &quot;organisations&quot;,
+  &quot;title&quot;: &quot;Organisation reference data (ODS)&quot;,
+  &quot;status&quot;: &quot;draft&quot;,
+  &quot;frequency&quot;: &quot;daily&quot;,
+  &quot;summary&quot;: &quot;Organisations that appear in the statistics (NHS trusts, independent sector providers, commissioners), with role, sector, address, operating dates, operator …&quot;
+}</code></pre></div></section></main>
+<footer>Generated 18 November 2026 · v0.1.0 · Contains public sector
+information licensed under the Open Government Licence v3.0.</footer>
+</body></html>

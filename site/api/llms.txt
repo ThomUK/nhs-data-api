@@ -81,8 +81,14 @@ Weekly patient-level collection of elective waiting lists, published as aggregat
 Caveats:
 - WLMDS is a different collection from monthly RTT and its figures will not match RTT exactly (coverage, timing and definitions differ). Do not mix the two in one series.
 
+## Errors
+
+- JSON body with `detail` (a message, or a list of problems for invalid parameters). 404: unknown code or no matching rows (the message says when an organisation exists but has no data that month). 422: invalid parameter. 503: data not loaded. 429 (planned): rate limited, honour Retry-After.
+
 ## Docs
 
 - Endpoints: reference.html
+- Objects: objects.html
+- Errors: errors.html
 - OpenAPI: openapi.json
 - Datasets & measures: datasets.html
