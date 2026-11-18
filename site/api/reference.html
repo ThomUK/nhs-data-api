@@ -13,21 +13,21 @@
       &quot;title&quot;: &quot;Organisation reference data (ODS)&quot;,
       &quot;status&quot;: &quot;draft&quot;,
       &quot;frequency&quot;: &quot;daily&quot;,
-      &quot;summary&quot;: &quot;Organisations that appear in the statistics (NHS trusts, independent sector providers, commissioners), with role, sector, address, operating dates, operator \u2026&quot;
+      &quot;summary&quot;: &quot;Organisations that appear in the statistics (NHS trusts, independent sector providers, commissioners), with role, sector, address, operating dates, operator …&quot;
     },
     {
       &quot;id&quot;: &quot;rtt&quot;,
       &quot;title&quot;: &quot;Consultant-led Referral to Treatment (RTT) Waiting Times&quot;,
       &quot;status&quot;: &quot;draft&quot;,
       &quot;frequency&quot;: &quot;monthly&quot;,
-      &quot;summary&quot;: &quot;Monthly counts of patients on consultant-led elective care pathways in England, by provider, commissioner and treatment function, split into weekly waiting-t\u2026&quot;
+      &quot;summary&quot;: &quot;Monthly counts of patients on consultant-led elective care pathways in England, by provider, commissioner and treatment function, split into weekly waiting-t…&quot;
     },
     {
       &quot;id&quot;: &quot;wlmds&quot;,
       &quot;title&quot;: &quot;Waiting List Minimum Data Set (WLMDS)&quot;,
       &quot;status&quot;: &quot;draft&quot;,
       &quot;frequency&quot;: &quot;weekly&quot;,
-      &quot;summary&quot;: &quot;Weekly patient-level collection of elective waiting lists, published as aggregate statistics alongside the monthly RTT data. Gives a more timely view of the \u2026&quot;
+      &quot;summary&quot;: &quot;Weekly patient-level collection of elective waiting lists, published as aggregate statistics alongside the monthly RTT data. Gives a more timely view of the …&quot;
     }
   ]
 }</code></pre></details></section><section class=endpoint id="v1-datasets-dataset_id"><h3><span class=method>GET</span><code>/v1/datasets/{dataset_id}</code></h3><p>Full catalogue entry for one dataset: measures, views, dimensions, codes and caveats.</p><div class=wrap><table><thead><tr><th>Parameter</th><th>In</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>dataset_id</code> <span class=chip>required</span></td><td>path</td><td>string</td><td></td><td></td></tr></tbody></table></div></section><section class=endpoint id="v1-rtt-metrics"><h3><span class=method>GET</span><code>/v1/rtt/metrics</code></h3><p>RTT v1 measures for one view, filtered by organisation, period and specialty.</p><div class=wrap><table><thead><tr><th>Parameter</th><th>In</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>view</code></td><td>query</td><td>string</td><td><code>provider</code></td><td>provider / provider_icb: where patients are treated. population_icb / population_sub_icb: where patients&#x27; care is commissioned (residents, wherever treated). national: England.<br><span class=muted>One of: <code>national</code>, <code>provider</code>, <code>provider_icb</code>, <code>population_icb</code>, <code>population_sub_icb</code></span></td></tr><tr><td><code>org</code></td><td>query</td><td>string</td><td></td><td>ODS code within the view, e.g. RJ1 or QKK</td></tr><tr><td><code>period</code></td><td>query</td><td>string</td><td></td><td>Month as YYYY-MM-01; default latest</td></tr><tr><td><code>period_from</code></td><td>query</td><td>string</td><td></td><td>Start of a range (inclusive)</td></tr><tr><td><code>treatment_function</code></td><td>query</td><td>string</td><td><code>C_999</code></td><td>Treatment function code; C_999 = all</td></tr><tr><td><code>measures</code></td><td>query</td><td>string</td><td></td><td>Comma-separated measure ids; default all</td></tr><tr><td><code>include_experimental</code></td><td>query</td><td>boolean</td><td><code>False</code></td><td>Include experimental measures</td></tr></tbody></table></div><p class=small><strong>Example</strong></p><pre><code class="shell">curl &quot;https://&lt;api-host&gt;/v1/rtt/metrics?view=national&amp;measures=waiting_list_total,pct_within_18_weeks,median_wait_weeks&amp;period_from=2026-07-01&quot;</code></pre><details><summary class=small>Response (real data; lists and meta shortened)</summary><pre><code class="json">{
@@ -70,9 +70,9 @@
       {
         &quot;id&quot;: &quot;rtt-english-commissioners&quot;,
         &quot;applies_to&quot;: &quot;all&quot;,
-        &quot;text&quot;: &quot;All measures exclude patients commissioned outside England (commissioner code NONC: Wales, Scotland, Northern Ireland, overseas), matching NHS England&#x27;s publ\u2026&quot;
+        &quot;text&quot;: &quot;All measures exclude patients commissioned outside England (commissioner code NONC: Wales, Scotland, Northern Ireland, overseas), matching NHS England&#x27;s publ…&quot;
       },
-      &quot;\u2026 5 more&quot;
+      &quot;… 5 more&quot;
     ],
     &quot;measures&quot;: {
       &quot;waiting_list_total&quot;: {
@@ -82,7 +82,7 @@
         &quot;caveat&quot;: &quot;Sum of submitted data only. NHS England&#x27;s national headline may include estimates for organisations that did not submit, so it can be higher.\n&quot;,
         &quot;status&quot;: &quot;stable&quot;
       },
-      &quot;\u2026&quot;: &quot;2 more measure definitions&quot;
+      &quot;…&quot;: &quot;2 more measure definitions&quot;
     },
     &quot;view&quot;: &quot;national&quot;,
     &quot;rows&quot;: 3,
@@ -110,9 +110,9 @@
       {
         &quot;id&quot;: &quot;rtt-english-commissioners&quot;,
         &quot;applies_to&quot;: &quot;all&quot;,
-        &quot;text&quot;: &quot;All measures exclude patients commissioned outside England (commissioner code NONC: Wales, Scotland, Northern Ireland, overseas), matching NHS England&#x27;s publ\u2026&quot;
+        &quot;text&quot;: &quot;All measures exclude patients commissioned outside England (commissioner code NONC: Wales, Scotland, Northern Ireland, overseas), matching NHS England&#x27;s publ…&quot;
       },
-      &quot;\u2026 5 more&quot;
+      &quot;… 5 more&quot;
     ],
     &quot;measures&quot;: {
       &quot;waiting_list_total&quot;: {
@@ -122,7 +122,7 @@
         &quot;caveat&quot;: &quot;Sum of submitted data only. NHS England&#x27;s national headline may include estimates for organisations that did not submit, so it can be higher.\n&quot;,
         &quot;status&quot;: &quot;stable&quot;
       },
-      &quot;\u2026&quot;: &quot;2 more measure definitions&quot;
+      &quot;…&quot;: &quot;2 more measure definitions&quot;
     },
     &quot;view&quot;: &quot;provider&quot;,
     &quot;rows&quot;: 1,
@@ -149,9 +149,9 @@
       {
         &quot;id&quot;: &quot;rtt-english-commissioners&quot;,
         &quot;applies_to&quot;: &quot;all&quot;,
-        &quot;text&quot;: &quot;All measures exclude patients commissioned outside England (commissioner code NONC: Wales, Scotland, Northern Ireland, overseas), matching NHS England&#x27;s publ\u2026&quot;
+        &quot;text&quot;: &quot;All measures exclude patients commissioned outside England (commissioner code NONC: Wales, Scotland, Northern Ireland, overseas), matching NHS England&#x27;s publ…&quot;
       },
-      &quot;\u2026 5 more&quot;
+      &quot;… 5 more&quot;
     ],
     &quot;measures&quot;: {
       &quot;waiting_list_total&quot;: {
@@ -161,7 +161,7 @@
         &quot;caveat&quot;: &quot;Sum of submitted data only. NHS England&#x27;s national headline may include estimates for organisations that did not submit, so it can be higher.\n&quot;,
         &quot;status&quot;: &quot;stable&quot;
       },
-      &quot;\u2026&quot;: &quot;1 more measure definitions&quot;
+      &quot;…&quot;: &quot;1 more measure definitions&quot;
     },
     &quot;view&quot;: &quot;population_icb&quot;,
     &quot;rows&quot;: 1,
@@ -195,7 +195,7 @@ recoded, closed, not submitted); and NHS trusts that have not submitted for long
           &quot;successor&quot;: null,
           &quot;closed_on&quot;: null
         },
-        &quot;\u2026 10 more&quot;
+        &quot;… 10 more&quot;
       ],
       &quot;persistent_non_submitters&quot;: [
         {
@@ -213,7 +213,7 @@ recoded, closed, not submitted); and NHS trusts that have not submitted for long
           &quot;name&quot;: &quot;UNIVERSITY HOSPITALS PLYMOUTH NHS TRUST&quot;,
           &quot;last_reported&quot;: &quot;2026-06-01&quot;
         },
-        &quot;\u2026 3 more&quot;
+        &quot;… 3 more&quot;
       ]
     }
   ],
@@ -227,9 +227,9 @@ recoded, closed, not submitted); and NHS trusts that have not submitted for long
       {
         &quot;id&quot;: &quot;rtt-english-commissioners&quot;,
         &quot;applies_to&quot;: &quot;all&quot;,
-        &quot;text&quot;: &quot;All measures exclude patients commissioned outside England (commissioner code NONC: Wales, Scotland, Northern Ireland, overseas), matching NHS England&#x27;s publ\u2026&quot;
+        &quot;text&quot;: &quot;All measures exclude patients commissioned outside England (commissioner code NONC: Wales, Scotland, Northern Ireland, overseas), matching NHS England&#x27;s publ…&quot;
       },
-      &quot;\u2026 5 more&quot;
+      &quot;… 5 more&quot;
     ],
     &quot;measures&quot;: {
       &quot;providers_submitting&quot;: {
@@ -238,7 +238,7 @@ recoded, closed, not submitted); and NHS trusts that have not submitted for long
         &quot;definition&quot;: &quot;Number of providers with any rows in the group for the month.&quot;,
         &quot;status&quot;: &quot;stable&quot;
       },
-      &quot;\u2026&quot;: &quot;1 more measure definitions&quot;
+      &quot;…&quot;: &quot;1 more measure definitions&quot;
     }
   }
 }</code></pre></details></section><section class=endpoint id="v1-organisations"><h3><span class=method>GET</span><code>/v1/organisations</code></h3><p>Organisations that appear in the statistics, from the ODS snapshot.</p><div class=wrap><table><thead><tr><th>Parameter</th><th>In</th><th>Type</th><th>Default</th><th>Description</th></tr></thead><tbody><tr><td><code>q</code></td><td>query</td><td>string</td><td></td><td>Search name or ODS code, e.g. &#x27;bristol&#x27; or &#x27;RA7&#x27;</td></tr><tr><td><code>sector</code></td><td>query</td><td>string</td><td></td><td><br><span class=muted>One of: <code>nhs_trust</code>, <code>independent_sector</code>, <code>commissioner</code>, <code>other</code></span></td></tr><tr><td><code>limit</code></td><td>query</td><td>integer</td><td><code>50</code></td><td></td></tr></tbody></table></div><p class=small><strong>Example</strong></p><pre><code class="shell">curl &quot;https://&lt;api-host&gt;/v1/organisations?q=bristol&amp;sector=nhs_trust&quot;</code></pre><details><summary class=small>Response (real data; lists and meta shortened)</summary><pre><code class="json">{
@@ -300,9 +300,9 @@ recoded, closed, not submitted); and NHS trusts that have not submitted for long
       {
         &quot;id&quot;: &quot;ods-lineage&quot;,
         &quot;applies_to&quot;: &quot;all&quot;,
-        &quot;text&quot;: &quot;Successor links come from ODS where recorded (for example North Bristol NHS Trust RVJ to RA7 from 1 July 2026). Changes of operator can issue new codes witho\u2026&quot;
+        &quot;text&quot;: &quot;Successor links come from ODS where recorded (for example North Bristol NHS Trust RVJ to RA7 from 1 July 2026). Changes of operator can issue new codes witho…&quot;
       },
-      &quot;\u2026 1 more&quot;
+      &quot;… 1 more&quot;
     ],
     &quot;rows&quot;: 2,
     &quot;truncated&quot;: false
@@ -341,9 +341,9 @@ recoded, closed, not submitted); and NHS trusts that have not submitted for long
       {
         &quot;id&quot;: &quot;ods-lineage&quot;,
         &quot;applies_to&quot;: &quot;all&quot;,
-        &quot;text&quot;: &quot;Successor links come from ODS where recorded (for example North Bristol NHS Trust RVJ to RA7 from 1 July 2026). Changes of operator can issue new codes witho\u2026&quot;
+        &quot;text&quot;: &quot;Successor links come from ODS where recorded (for example North Bristol NHS Trust RVJ to RA7 from 1 July 2026). Changes of operator can issue new codes witho…&quot;
       },
-      &quot;\u2026 1 more&quot;
+      &quot;… 1 more&quot;
     ]
   }
 }</code></pre></details></section></main>

@@ -22,9 +22,23 @@ PRODUCT = "secondthursday"
 BASE = "https://<api-host>"  # not yet deployed
 DESCRIPTION = ("Documentation for an API serving public NHS England statistics with "
                "definitions, sources and caveats.")
-QUICKSTART = (f'curl "{BASE}/v1/rtt/metrics?view=national'
-              '&measures=waiting_list_total,pct_within_18_weeks,median_wait_weeks'
-              '&period_from=2026-07-01"')
+# Quick start on the overview page: (introduction, path, query). Responses are real, taken
+# from the processed data at build time.
+QUICKSTART = [
+    ("England's waiting list, % within 18 weeks and median wait since July 2026:",
+     "/v1/rtt/metrics", {"view": "national",
+                         "measures": "waiting_list_total,pct_within_18_weeks,median_wait_weeks",
+                         "period_from": "2026-07-01"}),
+    ("One trust (Guy's and St Thomas', ODS code <code>RJ1</code>), latest month, all measures:",
+     "/v1/rtt/metrics", {"view": "provider", "org": "RJ1"}),
+    ("Find an NHS trust's code:",
+     "/v1/organisations", {"q": "bristol", "sector": "nhs_trust"}),
+]
+
+
+def _url(path: str, params: dict) -> str:
+    query = "&".join(f"{k}={v}" for k, v in params.items())
+    return f"{BASE}{path}" + (f"?{query}" if query else "")
 
 EXAMPLES = [
     ("/v1/rtt/metrics", {"view": "national", "measures":
@@ -82,6 +96,7 @@ border-radius:6px;color:var(--ink-2);margin:16px 0}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 16px}
 .card h3{margin:0 0 4px}.muted{color:var(--muted)}.small{font-size:14px}
 details summary{cursor:pointer;color:var(--ink-2);margin:4px 0}
+pre.response{max-height:26em;overflow:auto}
 footer{color:var(--muted);font-size:13px;max-width:960px;margin:0 auto;padding:0 24px 40px}
 @media (max-width:640px){main{padding:20px 16px 48px}header.top{padding:10px 16px}
 h1{font-size:25px}}
@@ -109,8 +124,13 @@ information licensed under the Open Government Licence v3.0.</footer>
 </body></html>"""
 
 
-def _code(text: str, lang: str = "") -> str:
-    return f'<pre><code class="{lang}">{escape(text)}</code></pre>'
+def _code(text: str, lang: str = "", extra: str = "") -> str:
+    cls = f' class="{extra}"' if extra else ""
+    return f'<pre{cls}><code class="{lang}">{escape(text)}</code></pre>'
+
+
+def _json(obj) -> str:
+    return json.dumps(obj, indent=2, default=str, ensure_ascii=False)
 
 
 def _trim(obj, max_items: int = 3, key: str = ""):
@@ -134,7 +154,7 @@ def _trim(obj, max_items: int = 3, key: str = ""):
     return obj
 
 
-def example_responses(processed_dir: Path) -> dict[str, dict]:
+def example_responses(processed_dir: Path, examples=None) -> dict[str, dict]:
     """Call the API in-process against the processed data. Missing data -> no example."""
     from fastapi.testclient import TestClient
 
@@ -145,7 +165,7 @@ def example_responses(processed_dir: Path) -> dict[str, dict]:
     out = {}
     try:
         client = TestClient(app_module.app)
-        for path, params in EXAMPLES:
+        for path, params in (EXAMPLES if examples is None else examples):
             resp = client.get(path, params=params)
             if resp.status_code == 200:
                 query = "&".join(f"{k}={v}" for k, v in params.items())
@@ -215,7 +235,7 @@ def reference_page(spec: dict, examples: dict[str, dict]) -> str:
                             + _code(f'curl "{url}"', "shell")
                             + "<details><summary class=small>Response (real data; lists and "
                             "meta shortened)</summary>"
-                            + _code(json.dumps(response, indent=2, default=str), "json")
+                            + _code(_json(response), "json")
                             + "</details>")
         body.append("</section>")
     return _page(f"Endpoints · {PRODUCT}", "reference.html", "".join(body))
@@ -307,7 +327,21 @@ def datasets_page(cat: dict[str, Dataset]) -> str:
                  f"<div class=cards>{cards}</div>")
 
 
-def overview_page(cat: dict[str, Dataset], validation: dict | None) -> str:
+def _quickstart_html(responses: dict[str, dict]) -> str:
+    parts = []
+    for intro, path, params in QUICKSTART:
+        query = "&".join(f"{k}={v}" for k, v in params.items())
+        response = responses.get(f"{path}?{query}" if query else path)
+        parts.append(f"<p>{intro}</p>" + _code(f'curl "{_url(path, params)}"', "shell"))
+        if response is not None:
+            parts.append("<p class=small><strong>Response</strong> "
+                         "<span class=muted>(real data; long lists and meta shortened)</span></p>"
+                         + _code(_json(response), "json", "response"))
+    return "\n".join(parts)
+
+
+def overview_page(cat: dict[str, Dataset], validation: dict | None,
+                  quick_responses: dict[str, dict] | None = None) -> str:
     rtt = cat.get("rtt")
     valid = ""
     if validation and validation.get("runs"):
@@ -341,12 +375,7 @@ Licence; reuse is permitted with attribution.</li>
 <h2>Quick start</h2>
 <div class=note>The API is not yet publicly deployed. Examples use <code>{escape(BASE)}</code> as
 a placeholder for the host.</div>
-<p>England's waiting list, % within 18 weeks and median wait since July 2026:</p>
-{_code(QUICKSTART, 'shell')}
-<p>One trust (Guy's and St Thomas', ODS code <code>RJ1</code>), latest month:</p>
-{_code(f'curl "{BASE}/v1/rtt/metrics?view=provider&org=RJ1"', 'shell')}
-<p>Find an organisation's code:</p>
-{_code(f'curl "{BASE}/v1/organisations?q=bristol"', 'shell')}
+{_quickstart_html(quick_responses or {})}
 <h2>Concepts</h2>
 <h3>Views</h3>
 <p>Waiting-list data can be grouped by who treats patients or by where they live:</p>
@@ -440,7 +469,8 @@ def build_docs(out_dir: Path | None = None, processed_dir: Path = PROCESSED_DIR,
     available = available_periods(processed_dir)
     files = {
         "assets/docs.css": CSS.strip() + "\n",
-        "index.html": overview_page(cat, validation),
+        "index.html": overview_page(cat, validation, example_responses(
+            processed_dir, [(path, params) for _, path, params in QUICKSTART])),
         "reference.html": reference_page(spec, examples),
         "datasets.html": datasets_page(cat),
         "openapi.json": json.dumps(spec, indent=2),

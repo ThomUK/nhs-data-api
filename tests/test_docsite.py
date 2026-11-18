@@ -12,10 +12,18 @@ def test_build_docs(tmp_path):
     rows = [make_row("RJ1", "Part_2", "C_999", {3: 10}, period="RTT-September-2026")]
     rtt.write_vintage(rtt.tidy(rtt.read_full_csv(to_csv(rows))), processed / "rtt", "2026-11-12")
     build_rtt_metrics(processed, raw_dir=tmp_path / "raw")
+    import polars as pl
+    (processed / "ods").mkdir()
+    pl.DataFrame({"org_code": ["RA7"], "name": ["BRISTOL NHS FOUNDATION TRUST"],
+                  "sector": ["nhs_trust"]}).write_parquet(
+        processed / "ods" / "organisations.parquet")
     files = {p.relative_to(out).as_posix() for p in build_docs(out, processed_dir=processed)}
     assert {"index.html", "reference.html", "datasets.html", "openapi.json", "llms.txt",
             "datasets/rtt.html", "datasets/organisations.html", "assets/docs.css"} <= files
 
+    overview = (out / "index.html").read_text()
+    assert overview.count("<strong>Response</strong>") == 3  # one per quick-start example
+    assert "&quot;org_code&quot;: &quot;RJ1&quot;" in overview
     reference = (out / "reference.html").read_text()
     assert "/v1/rtt/metrics" in reference and "Example" in reference  # real example rendered
     assert json.loads((out / "openapi.json").read_text())["paths"]["/v1/rtt/metrics"]

@@ -27,12 +27,199 @@ Licence; reuse is permitted with attribution.</li>
 <h2>Quick start</h2>
 <div class=note>The API is not yet publicly deployed. Examples use <code>https://&lt;api-host&gt;</code> as
 a placeholder for the host.</div>
-<p>England's waiting list, % within 18 weeks and median wait since July 2026:</p>
-<pre><code class="shell">curl &quot;https://&lt;api-host&gt;/v1/rtt/metrics?view=national&amp;measures=waiting_list_total,pct_within_18_weeks,median_wait_weeks&amp;period_from=2026-07-01&quot;</code></pre>
-<p>One trust (Guy's and St Thomas', ODS code <code>RJ1</code>), latest month:</p>
-<pre><code class="shell">curl &quot;https://&lt;api-host&gt;/v1/rtt/metrics?view=provider&amp;org=RJ1&quot;</code></pre>
-<p>Find an organisation's code:</p>
-<pre><code class="shell">curl &quot;https://&lt;api-host&gt;/v1/organisations?q=bristol&quot;</code></pre>
+<p>England's waiting list, % within 18 weeks and median wait since July 2026:</p><pre><code class="shell">curl &quot;https://&lt;api-host&gt;/v1/rtt/metrics?view=national&amp;measures=waiting_list_total,pct_within_18_weeks,median_wait_weeks&amp;period_from=2026-07-01&quot;</code></pre>
+<p class=small><strong>Response</strong> <span class=muted>(real data; long lists and meta shortened)</span></p><pre class="response"><code class="json">{
+  &quot;data&quot;: [
+    {
+      &quot;period&quot;: &quot;2026-07-01&quot;,
+      &quot;org_code&quot;: &quot;ENG&quot;,
+      &quot;org_name&quot;: &quot;ENGLAND&quot;,
+      &quot;treatment_function_code&quot;: &quot;C_999&quot;,
+      &quot;waiting_list_total&quot;: 7131685,
+      &quot;pct_within_18_weeks&quot;: 65.3,
+      &quot;median_wait_weeks&quot;: 12.0
+    },
+    {
+      &quot;period&quot;: &quot;2026-08-01&quot;,
+      &quot;org_code&quot;: &quot;ENG&quot;,
+      &quot;org_name&quot;: &quot;ENGLAND&quot;,
+      &quot;treatment_function_code&quot;: &quot;C_999&quot;,
+      &quot;waiting_list_total&quot;: 7158164,
+      &quot;pct_within_18_weeks&quot;: 65.2,
+      &quot;median_wait_weeks&quot;: 12.2
+    },
+    {
+      &quot;period&quot;: &quot;2026-09-01&quot;,
+      &quot;org_code&quot;: &quot;ENG&quot;,
+      &quot;org_name&quot;: &quot;ENGLAND&quot;,
+      &quot;treatment_function_code&quot;: &quot;C_999&quot;,
+      &quot;waiting_list_total&quot;: 7074324,
+      &quot;pct_within_18_weeks&quot;: 65.9,
+      &quot;median_wait_weeks&quot;: 12.2
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;dataset&quot;: &quot;rtt&quot;,
+    &quot;title&quot;: &quot;Consultant-led Referral to Treatment (RTT) Waiting Times&quot;,
+    &quot;source_page&quot;: &quot;https://www.england.nhs.uk/statistics/statistical-work-areas/rtt-waiting-times/&quot;,
+    &quot;licence&quot;: &quot;Open Government Licence v3.0&quot;,
+    &quot;attribution&quot;: &quot;Source: NHS England, Consultant-led Referral to Treatment Waiting Times. Contains public sector information licensed under the Open Government Licence v3.0.&quot;,
+    &quot;caveats&quot;: [
+      {
+        &quot;id&quot;: &quot;rtt-english-commissioners&quot;,
+        &quot;applies_to&quot;: &quot;all&quot;,
+        &quot;text&quot;: &quot;All measures exclude patients commissioned outside England (commissioner code NONC: Wales, Scotland, Northern Ireland, overseas), matching NHS England&#x27;s publ…&quot;
+      },
+      &quot;… 5 more&quot;
+    ],
+    &quot;measures&quot;: {
+      &quot;waiting_list_total&quot;: {
+        &quot;label&quot;: &quot;Total waiting list (incomplete pathways)&quot;,
+        &quot;unit&quot;: &quot;count&quot;,
+        &quot;definition&quot;: &quot;Patients waiting to start treatment at month end. Sum of Part_2 across all weekly bands.&quot;,
+        &quot;caveat&quot;: &quot;Sum of submitted data only. NHS England&#x27;s national headline may include estimates for organisations that did not submit, so it can be higher.\n&quot;,
+        &quot;status&quot;: &quot;stable&quot;
+      },
+      &quot;…&quot;: &quot;2 more measure definitions&quot;
+    },
+    &quot;view&quot;: &quot;national&quot;,
+    &quot;rows&quot;: 3,
+    &quot;truncated&quot;: false
+  }
+}</code></pre>
+<p>One trust (Guy's and St Thomas', ODS code <code>RJ1</code>), latest month, all measures:</p><pre><code class="shell">curl &quot;https://&lt;api-host&gt;/v1/rtt/metrics?view=provider&amp;org=RJ1&quot;</code></pre>
+<p class=small><strong>Response</strong> <span class=muted>(real data; long lists and meta shortened)</span></p><pre class="response"><code class="json">{
+  &quot;data&quot;: [
+    {
+      &quot;period&quot;: &quot;2026-09-01&quot;,
+      &quot;org_code&quot;: &quot;RJ1&quot;,
+      &quot;org_name&quot;: &quot;GUY&#x27;S AND ST THOMAS&#x27; NHS FOUNDATION TRUST&quot;,
+      &quot;treatment_function_code&quot;: &quot;C_999&quot;,
+      &quot;waiting_list_total&quot;: 107437,
+      &quot;waiting_list_dta&quot;: 22754,
+      &quot;pct_waiting_list_dta&quot;: 21.2,
+      &quot;pct_within_18_weeks&quot;: 67.3,
+      &quot;waiting_over_18_weeks&quot;: 35112,
+      &quot;waiting_over_52_weeks&quot;: 1063,
+      &quot;waiting_over_65_weeks&quot;: 162,
+      &quot;waiting_over_78_weeks&quot;: 69,
+      &quot;waiting_over_104_weeks&quot;: 26,
+      &quot;median_wait_weeks&quot;: 11.6,
+      &quot;p92_wait_weeks&quot;: 36.2,
+      &quot;approaching_52_weeks&quot;: 5380,
+      &quot;clock_starts&quot;: 31295,
+      &quot;clock_stops_admitted&quot;: 6213,
+      &quot;clock_stops_non_admitted&quot;: 21138,
+      &quot;clock_stops_total&quot;: 27351,
+      &quot;pct_completed_within_18_weeks_admitted&quot;: 61.0,
+      &quot;pct_completed_within_18_weeks_non_admitted&quot;: 69.7,
+      &quot;median_wait_completed_admitted_weeks&quot;: 12.5,
+      &quot;median_wait_completed_non_admitted_weeks&quot;: 10.7,
+      &quot;waiting_list_change_mom&quot;: -1710,
+      &quot;waiting_over_52_weeks_change_mom&quot;: 152,
+      &quot;waiting_list_change_mom_like_for_like&quot;: -1710,
+      &quot;waiting_over_52_weeks_change_mom_like_for_like&quot;: 152,
+      &quot;unreported_removals&quot;: 5654,
+      &quot;providers_submitting&quot;: 1
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;dataset&quot;: &quot;rtt&quot;,
+    &quot;title&quot;: &quot;Consultant-led Referral to Treatment (RTT) Waiting Times&quot;,
+    &quot;source_page&quot;: &quot;https://www.england.nhs.uk/statistics/statistical-work-areas/rtt-waiting-times/&quot;,
+    &quot;licence&quot;: &quot;Open Government Licence v3.0&quot;,
+    &quot;attribution&quot;: &quot;Source: NHS England, Consultant-led Referral to Treatment Waiting Times. Contains public sector information licensed under the Open Government Licence v3.0.&quot;,
+    &quot;caveats&quot;: [
+      {
+        &quot;id&quot;: &quot;rtt-english-commissioners&quot;,
+        &quot;applies_to&quot;: &quot;all&quot;,
+        &quot;text&quot;: &quot;All measures exclude patients commissioned outside England (commissioner code NONC: Wales, Scotland, Northern Ireland, overseas), matching NHS England&#x27;s publ…&quot;
+      },
+      &quot;… 5 more&quot;
+    ],
+    &quot;measures&quot;: {
+      &quot;waiting_list_total&quot;: {
+        &quot;label&quot;: &quot;Total waiting list (incomplete pathways)&quot;,
+        &quot;unit&quot;: &quot;count&quot;,
+        &quot;definition&quot;: &quot;Patients waiting to start treatment at month end. Sum of Part_2 across all weekly bands.&quot;,
+        &quot;caveat&quot;: &quot;Sum of submitted data only. NHS England&#x27;s national headline may include estimates for organisations that did not submit, so it can be higher.\n&quot;,
+        &quot;status&quot;: &quot;stable&quot;
+      },
+      &quot;…&quot;: &quot;25 more measure definitions&quot;
+    },
+    &quot;view&quot;: &quot;provider&quot;,
+    &quot;rows&quot;: 1,
+    &quot;truncated&quot;: false
+  }
+}</code></pre>
+<p>Find an NHS trust's code:</p><pre><code class="shell">curl &quot;https://&lt;api-host&gt;/v1/organisations?q=bristol&amp;sector=nhs_trust&quot;</code></pre>
+<p class=small><strong>Response</strong> <span class=muted>(real data; long lists and meta shortened)</span></p><pre class="response"><code class="json">{
+  &quot;data&quot;: [
+    {
+      &quot;org_code&quot;: &quot;RA7&quot;,
+      &quot;name&quot;: &quot;BRISTOL NHS FOUNDATION TRUST&quot;,
+      &quot;sector&quot;: &quot;nhs_trust&quot;,
+      &quot;primary_role&quot;: &quot;RO197&quot;,
+      &quot;primary_role_name&quot;: &quot;NHS TRUST&quot;,
+      &quot;status&quot;: &quot;Active&quot;,
+      &quot;operational_start&quot;: &quot;1991-04-01&quot;,
+      &quot;operational_end&quot;: null,
+      &quot;legal_start&quot;: null,
+      &quot;legal_end&quot;: null,
+      &quot;closed_on&quot;: null,
+      &quot;postcode&quot;: &quot;BS1 3NU&quot;,
+      &quot;address_line1&quot;: &quot;TRUST HEADQUARTERS&quot;,
+      &quot;town&quot;: &quot;BRISTOL&quot;,
+      &quot;operated_by&quot;: null,
+      &quot;successors&quot;: [],
+      &quot;predecessors&quot;: [
+        &quot;RA3&quot;,
+        &quot;RVJ&quot;
+      ]
+    },
+    {
+      &quot;org_code&quot;: &quot;RVJ&quot;,
+      &quot;name&quot;: &quot;NORTH BRISTOL NHS TRUST&quot;,
+      &quot;sector&quot;: &quot;nhs_trust&quot;,
+      &quot;primary_role&quot;: &quot;RO197&quot;,
+      &quot;primary_role_name&quot;: &quot;NHS TRUST&quot;,
+      &quot;status&quot;: &quot;Active&quot;,
+      &quot;operational_start&quot;: &quot;1999-04-01&quot;,
+      &quot;operational_end&quot;: null,
+      &quot;legal_start&quot;: &quot;1999-04-01&quot;,
+      &quot;legal_end&quot;: &quot;2026-06-30&quot;,
+      &quot;closed_on&quot;: &quot;2026-06-30&quot;,
+      &quot;postcode&quot;: &quot;BS10 5NB&quot;,
+      &quot;address_line1&quot;: &quot;SOUTHMEAD HOSPITAL&quot;,
+      &quot;town&quot;: &quot;BRISTOL&quot;,
+      &quot;operated_by&quot;: null,
+      &quot;successors&quot;: [
+        &quot;RA7&quot;
+      ],
+      &quot;predecessors&quot;: [
+        &quot;REE&quot;,
+        &quot;REB&quot;
+      ]
+    }
+  ],
+  &quot;meta&quot;: {
+    &quot;dataset&quot;: &quot;organisations&quot;,
+    &quot;title&quot;: &quot;Organisation reference data (ODS)&quot;,
+    &quot;source_page&quot;: &quot;https://digital.nhs.uk/services/organisation-data-service&quot;,
+    &quot;licence&quot;: &quot;Open Government Licence v3.0&quot;,
+    &quot;attribution&quot;: &quot;Source: NHS England Organisation Data Service. Contains public sector information licensed under the Open Government Licence v3.0.&quot;,
+    &quot;caveats&quot;: [
+      {
+        &quot;id&quot;: &quot;ods-lineage&quot;,
+        &quot;applies_to&quot;: &quot;all&quot;,
+        &quot;text&quot;: &quot;Successor links come from ODS where recorded (for example North Bristol NHS Trust RVJ to RA7 from 1 July 2026). Changes of operator can issue new codes witho…&quot;
+      },
+      &quot;… 1 more&quot;
+    ],
+    &quot;rows&quot;: 2,
+    &quot;truncated&quot;: false
+  }
+}</code></pre>
 <h2>Concepts</h2>
 <h3>Views</h3>
 <p>Waiting-list data can be grouped by who treats patients or by where they live:</p>
